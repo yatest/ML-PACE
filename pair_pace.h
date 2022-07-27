@@ -70,6 +70,14 @@ namespace LAMMPS_NS {
 
         ACERecursiveEvaluator* ace = nullptr;
 
+        std::vector<char *> potential_file_name_list;
+
+        std::vector<int> temps_list;
+
+        std::vector<ACECTildeBasisSet *> basis_set_list;
+
+        std::vector<ACERecursiveEvaluator *> ace_list;
+
         char *potential_file_name;
 
         virtual void allocate();
