@@ -116,7 +116,7 @@ PairPACE::~PairPACE() {
         delete *itp;
     }
     std::vector<const char *>().swap(potential_file_name_list);
-    itp.std::vector<char *>::iterator::~iterator();
+    itp.std::vector<const char *>::iterator::~iterator();
 
     delete basis_set;
     std::vector<ACECTildeBasisSet *>::iterator itb;
@@ -124,7 +124,7 @@ PairPACE::~PairPACE() {
         delete *itb;
     }
     std::vector<ACECTildeBasisSet *>().swap(basis_set_list);
-    itb.std::vector<ACECTildeBasisSet>::iterator::~iterator();
+    itb.std::vector<ACECTildeBasisSet *>::iterator::~iterator();
 
     delete ace;
     std::vector<ACERecursiveEvaluator *>::iterator ita;
@@ -132,7 +132,7 @@ PairPACE::~PairPACE() {
         delete *ita;
     }
     std::vector<ACERecursiveEvaluator *>().swap(ace_list);
-    ita.std::vector<ACERecursiveEvaluator>::iterator::~iterator();
+    ita.std::vector<ACERecursiveEvaluator *>::iterator::~iterator();
 
     if (allocated) {
         memory->destroy(setflag);
