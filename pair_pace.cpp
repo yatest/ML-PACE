@@ -32,6 +32,10 @@ Copyright 2021 Yury Lysogorskiy^1, Cas van der Oord^2, Anton Bochkarev^1,
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
+//#include <fstream>
+#include "potential_file_reader.h"
+#include "tokenizer.h"
 #include "pair_pace.h"
 #include "atom.h"
 #include "neighbor.h"
@@ -90,11 +94,7 @@ PairPACE::PairPACE(LAMMPS *lmp) : Pair(lmp) {
     nelements = 0;
 
     ace = NULL;
-    // TWY: second ace evaluator used in interpolation
-    ace2 = NULL;
     potential_file_name = NULL;
-    // TWY: second potential file name used in interpolation
-    potential_file_name2 = NULL;
     elements = NULL;
     map = NULL;
 }
@@ -110,17 +110,26 @@ PairPACE::~PairPACE() {
         for (int i = 0; i < nelements; i++) delete[] elements[i];
     delete[] elements;
 
-
     delete[] potential_file_name;
-    // TWY: second potential file name used in interpolation
-    delete[] potential_file_name2;
+    std::vector<char *>::iterator i;
+    for (i = potential_file_name_list.begin(); i != potential_file_name_list.end(); ++i){
+        delete[] i;
+    }
+    std::vector<char *>().swap(potential_file_name_list);
 
     delete basis_set;
-    // TWY: second basis set used in interpolation
-    delete basis_set2;
+    std::vector<ACECTildeBasisSet *>::iterator i;
+    for (i = basis_set_list.begin(); i != basis_set_list.end(); ++i){
+        delete i;
+    }
+    std::vector<ACECTildeBasisSet *>().swap(basis_set_list);
+
     delete ace;
-    // TWY: second ace evaluator used in interpolation
-    delete ace2;
+    std::vector<ACERecursiveEvaluator *>::iterator i;
+    for (i = ace_list.begin(); i != ace_list.end(); ++i){
+        delete i;
+    }
+    std::vector<ACERecursiveEvaluator *>().swap(ace_list);
 
     if (allocated) {
         memory->destroy(setflag);
@@ -133,8 +142,8 @@ PairPACE::~PairPACE() {
 /* ---------------------------------------------------------------------- */
 
 void PairPACE::compute(int eflag, int vflag) {
-    int i, j, ii, jj, inum, jnum;
-    double delx, dely, delz, evdwl;
+    int i, j, ii, jj, inum, jnum, k, T_u, T_l;
+    double delx, dely, delz, evdwl, a;
     double fij[3];
     int *ilist, *jlist, *numneigh, **firstneigh;
 
@@ -194,8 +203,13 @@ void PairPACE::compute(int eflag, int vflag) {
             max_jnum = jnum;
     }
 
-    ace->resize_neighbours_cache(max_jnum);
-    if (interpolate) ace2->resize_neighbours_cache(max_jnum);
+    if (!interpolate) {
+        ace->resize_neighbours_cache(max_jnum);
+    } else {
+        for (k = 0; k < nbasis; k++){
+            ace_list[k]->resize_neighbours_cache(max_jnum);   
+        }
+    }
 
     //loop over atoms
     for (ii = 0; ii < list->inum; ii++) {
@@ -216,19 +230,22 @@ void PairPACE::compute(int eflag, int vflag) {
         // i = 0 ,1
         // jnum(0) = 50
         // jlist(neigh ind of 0-atom) = [1,2,10,7,99,25, .. 50 element in total]
-        try {
-            ace->compute_atom(i, x, type, jnum, jlist);
-        } catch (exception &e) {
-            error->all(FLERR, e.what());
-            exit(EXIT_FAILURE);
-        }
-        // TWY: repeat for second potential
-        if (interpolate) {
+        if (!interpolate) {
             try {
-                ace2->compute_atom(i, x, type, jnum, jlist);
+                ace->compute_atom(i, x, type, jnum, jlist);
             } catch (exception &e) {
                 error->all(FLERR, e.what());
                 exit(EXIT_FAILURE);
+            }
+        } else {
+        // TWY: repeat for all potentials
+            for (k = 0; k < nbasis; k++) {
+                try {
+                    ace_list[k]->compute_atom(i, x, type, jnum, jlist);
+                } catch (exception &e) {
+                    error->all(FLERR, e.what());
+                    exit(EXIT_FAILURE);
+                }
             }
         }
         // 'compute_atom' will update the `ace->e_atom` and `ace->neighbours_forces(jj, alpha)` arrays
@@ -241,13 +258,22 @@ void PairPACE::compute(int eflag, int vflag) {
             dely = x[j][1] - ytmp;
             delz = x[j][2] - ztmp;
 
-            if (interpolate){
-                fij[0] = scale[itype][jtype] * (lf*ace->neighbours_forces(jj, 0) +
-                    (1.0-lf)*ace2->neighbours_forces(jj, 0));
-                fij[1] = scale[itype][jtype] * (lf*ace->neighbours_forces(jj, 1) +
-                    (1.0-lf)*ace2->neighbours_forces(jj, 1));
-                fij[2] = scale[itype][jtype] * (lf*ace->neighbours_forces(jj, 2) +
-                    (1.0-lf)*ace2->neighbours_forces(jj, 2));
+            if (interpolate) {
+                for (k = 0; k < nbasis; k++) {
+                    if (temps_list[k] > T_e_avg) {
+                        if (k == 0) error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
+                        T_u = k;
+                        T_l = k-1;
+                        a = (temps_list[T_u] - T_e_avg) / (temps_list[T_u] - temps_list[T_l]);
+                        fij[0] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 0) +
+                            (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 0));
+                        fij[1] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 1) +
+                            (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 1));
+                        fij[2] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 2) +
+                            (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 2));
+                        break;
+                    }
+                }
             } else {
                 fij[0] = scale[itype][jtype] * ace->neighbours_forces(jj, 0);
                 fij[1] = scale[itype][jtype] * ace->neighbours_forces(jj, 1);
@@ -272,7 +298,7 @@ void PairPACE::compute(int eflag, int vflag) {
         if (eflag) {
             // evdwl = energy of atom I
             if (interpolate) {
-                evdwl = scale[1][1] * (lf*ace->e_atom + (1.0-lf)*ace2->e_atom);
+                evdwl = scale[1][1] * (a*ace_list[T_l]->e_atom + (1.0-a)*ace_list[T_u]->e_atom);
 	    } else {
 		evdwl = scale[1][1] * ace->e_atom;
               }
@@ -302,10 +328,9 @@ void PairPACE::allocate() {
    global settings
 ------------------------------------------------------------------------- */
 /* TWY: added in interpolate keyword for temperature interpolation,
-        added in lf and (1-lf) for fraction of each potential to use,
+        added in T_e_avg for the average electronic temperature,
         need to clean up messy conditional logic,
-        should also check that lf can be interpreted as a double,
-        eventually should calculate lf from LAMMPS temperature */
+        should also check that a can be interpreted as an integer */
 
 void PairPACE::settings(int narg, char **arg) {
     if (narg > 3) {
@@ -314,12 +339,12 @@ void PairPACE::settings(int narg, char **arg) {
         error->all(FLERR, RECURSIVE_KEYWORD);
         error->all(FLERR, "or\n\tpair_style pace ");
         error->all(FLERR, PRODUCT_KEYWORD);
-        error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate lf");
+        error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate T_e_avg");
     }
     recursive = true; // default evaluator style: RECURSIVE
     if (narg > 2) {
-        if (stod(arg[2]) >= 0.0 && stod(arg[2]) <= 1.0) {
-            lf = stod(arg[2]);
+        if (stoi(arg[2]) > 0) {
+            T_e_avg = stoi(arg[2]);
             if (strcmp(arg[0], PRODUCT_KEYWORD) == 0 && strcmp(arg[1], INTERP_KEYWORD) == 0) {
                 recursive = false;
                 interpolate = true;
@@ -332,7 +357,7 @@ void PairPACE::settings(int narg, char **arg) {
                   error->all(FLERR, RECURSIVE_KEYWORD);
                   error->all(FLERR, "or\n\tpair_style pace ");
                   error->all(FLERR, PRODUCT_KEYWORD);
-                  error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate lf");
+                  error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate T_e_avg");
               }
         } else {
             error->all(FLERR,
@@ -340,20 +365,20 @@ void PairPACE::settings(int narg, char **arg) {
             error->all(FLERR, RECURSIVE_KEYWORD);
             error->all(FLERR, "or\n\tpair_style pace ");
             error->all(FLERR, PRODUCT_KEYWORD);
-            error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate lf");
+            error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate T_e_avg");
         }
     } else if (narg > 1) {
           if (strcmp(arg[0], INTERP_KEYWORD) == 0) {
               interpolate = true;
-              if (stod(arg[1]) >= 0.0 && stod(arg[1]) <= 1.0) {
-                  lf = stod(arg[1]);
+              if (stoi(arg[1]) > 0) {
+                  T_e_avg = stoi(arg[1]);
               } else {
                   error->all(FLERR,
                              "Illegal pair_style command. Correct form:\n\tpair_style pace\nor\n\tpair_style pace ");
                   error->all(FLERR, RECURSIVE_KEYWORD);
                   error->all(FLERR, "or\n\tpair_style pace ");
                   error->all(FLERR, PRODUCT_KEYWORD);
-                  error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate lf");
+                  error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate T_e_avg");
               }
           } else {
             error->all(FLERR,
@@ -361,7 +386,7 @@ void PairPACE::settings(int narg, char **arg) {
             error->all(FLERR, RECURSIVE_KEYWORD);
             error->all(FLERR, "or\n\tpair_style pace ");
             error->all(FLERR, PRODUCT_KEYWORD);
-            error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate");
+            error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate T_e_avg");
             }
     } else if (narg > 0) {
           if (strcmp(arg[0], PRODUCT_KEYWORD) == 0) {
@@ -374,7 +399,7 @@ void PairPACE::settings(int narg, char **arg) {
               error->all(FLERR, RECURSIVE_KEYWORD);
               error->all(FLERR, "or\n\tpair_style pace ");
               error->all(FLERR, PRODUCT_KEYWORD);
-              error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate");
+              error->all(FLERR, "or\n\tpair_style pace (recursive/product) interpolate T_e_avg");
             }
       }
 
@@ -397,10 +422,11 @@ void PairPACE::settings(int narg, char **arg) {
 /* ----------------------------------------------------------------------
    set coeffs for one or more type pairs
 ------------------------------------------------------------------------- */
-/* TWY: added in basis_set2 to hold the second potentials basis functions and
-        expansion coefficients,
-        this is more general, however for our potentials they share the same
-        basis functions with only the coefficients varying */
+/* TWY: Added in basis_set_list, potential_file_name_list, and ace_list to
+        hold the various potential's basis functions, names, and evaluators.
+        For the currently fit potentials, the basis functions are identical,
+        with only expansion coefficients changing, however this is a more 
+        general procedure for electronic temperature interpolation. */
 
 void PairPACE::coeff(int narg, char **arg) {
 
@@ -415,15 +441,13 @@ void PairPACE::coeff(int narg, char **arg) {
 
     // TWY: check the correct number of arguments have been given
     if (interpolate) {
-        if (ntypes_coeff > 2) {
+        if (ntypes_coeff > 1) {
             error->all(FLERR,
-                      "Multiple elements or more than two ACE potentials specified. This is not currently supported");
-        } else if (ntypes_coeff < 2) {
+                      "Multiple elements or more than one list of ACE potentials specified. This is not currently supported");
+        } else if (ntypes_coeff < 1) {
             error->all(FLERR,
-                      "Temperature interpolation requires exactly two ACE potentials and one element");
+                      "Temperature interpolation requires exactly one list of ACE potentials and one element");
         }
-        // TWY: Remove the extra potential from the number of arguments
-        ntypes_coeff -= 1;
     }
 
     if (ntypes_coeff != atom->ntypes) {
@@ -437,152 +461,92 @@ void PairPACE::coeff(int narg, char **arg) {
     char *type1 = arg[0];
     char *type2 = arg[1];
     char *potential_file_name = arg[2];
-    char *potential_file_name2;
-    char **elemtypes;
-    if (interpolate) {
-        potential_file_name2 = arg[3];
-        elemtypes = &arg[4];
-    } else {
-        elemtypes = &arg[3];
-    }
+    char **elemtypes = &arg[3];
 
     // insure I,J args are * *
     if (strcmp(type1, "*") != 0 || strcmp(type2, "*") != 0)
         error->all(FLERR, "Incorrect args for pair coefficients");
 
-
-    //load potential file
-    basis_set = new ACECTildeBasisSet();
-
-    // TWY: load second potential file if interpolating
-    if (interpolate) {
-        basis_set2 = new ACECTildeBasisSet();
+    if (!interpolate) {
+        //load potential file
+        basis_set = new ACECTildeBasisSet();
+    } else {
+        // load ACE potential file names from potential_file_name
+        int nbasis = 0;
+        //string line;
+        std::vector<char *> potential_file_name_list;
+        std::vector<int> temps_list;
+        //std::ifstream infile;
+        //infile.open(potential_file_name);
+        PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
+        //if (!infile.is_open())
+        //    throw invalid_argument("Could not open file " + filename);
+        //while(getline(infile, line)){
+            //read number of files and names
+        //    potential_file_name_list.push_back(const_cast<char *>(line.c_str()));
+        //    ++nbasis;
+        int nwords = 2;
+        while (nwords == 2) {
+            char *line = reader.next_line();
+            nwords = utils::count_words(line);
+            auto line_token = ValueTokenizer(line);
+            temps_list.push_back(line_token.next_int());
+            potential_file_name_list.push_back(line_token.next_string().c_str());
+            ++nbasis;
+        }
+        if (nbasis == 0) error->all(FLERR, "Could not read potential file names");
     }
 
-    if (comm->me == 0) {
-        if (screen) fprintf(screen, "Loading %s\n", potential_file_name);
-        if (logfile) fprintf(logfile, "Loading %s\n", potential_file_name);
-    }
-    try {
-        basis_set->load(potential_file_name);
-    } catch (...) {
-        basis_set->load_yaml(potential_file_name);
-    }
-
-    if (comm->me == 0) {
-        if (screen) fprintf(screen, "Total number of basis functions\n");
-        if (logfile) fprintf(logfile, "Total number of basis functions\n");
-
-        for (SPECIES_TYPE mu = 0; mu < basis_set->nelements; mu++) {
-            int n_r1 = basis_set->total_basis_size_rank1[mu];
-            int n = basis_set->total_basis_size[mu];
-            if (screen) fprintf(screen, "\t%s: %d (r=1) %d (r>1)\n", basis_set->elements_name[mu].c_str(), n_r1, n);
-            if (logfile) fprintf(logfile, "\t%s: %d (r=1) %d (r>1)\n", basis_set->elements_name[mu].c_str(), n_r1, n);
+        // TWY: load all potential files if interpolating
+        // access individual objects as basis_set_list[i]
+        // DELETE ACECTildeBasisSet * OBJECTS AT END
+        std::vector<ACECTildeBasisSet *> basis_set_list;
+        basis_set_list.reserve(nbasis);
+        for (int i = 0; i < nbasis; i++) {
+            basis_set_list.push_back(new ACECTildeBasisSet());
         }
     }
 
-    // read args that map atom types to pACE elements
-    // map[i] = which element the Ith atom type is, -1 if not mapped
-    // map[0] is not used
-
-    ace = new ACERecursiveEvaluator();
-    ace->set_recursive(recursive);
-    ace->element_type_mapping.init(atom->ntypes + 1);
-
-    for (int i = 1; i <= atom->ntypes; i++) {
-        char *elemname = elemtypes[i - 1];
-        int atomic_number = AtomicNumberByName_pace(elemname);
-        if (atomic_number == -1) {
-            char error_msg[1024];
-            snprintf(error_msg, 1024, "String '%s' is not a valid element\n", elemname);
-            error->all(FLERR, error_msg);
-        }
-        SPECIES_TYPE mu = basis_set->get_species_index_by_name(elemname);
-        if (mu != -1) {
-            if (comm->me == 0) {
-                if (screen)
-                    fprintf(screen, "Mapping LAMMPS atom type #%d(%s) -> ACE species type #%d\n", i, elemname, mu);
-                if (logfile)
-                    fprintf(logfile, "Mapping LAMMPS atom type #%d(%s) -> ACE species type #%d\n", i, elemname, mu);
-            }
-            map[i] = mu;
-            ace->element_type_mapping(i) = mu; // set up LAMMPS atom type to ACE species  mapping for ace evaluator
-        } else {
-            char error_msg[1024];
-            snprintf(error_msg, 1024, "Element %s is not supported by ACE-potential from file %s", elemname,
-                     potential_file_name);
-            error->all(FLERR, error_msg);
-        }
-    }
-
-    // clear setflag since coeff() called once with I,J = * *
-    int n = atom->ntypes;
-    for (int i = 1; i <= n; i++) {
-        for (int j = i; j <= n; j++) {
-            setflag[i][j] = 1;
-            scale[i][j] = 1.0;
-        }
-    }
-
-    // set setflag i,j for type pairs where both are mapped to elements
-
-    int count = 1;
-    for (int i = 1; i <= n; i++)
-        for (int j = i; j <= n; j++)
-            if (map[i] >= 0 && map[j] >= 0) {
-                setflag[i][j] = 1;
-                count++;
-            }
-
-    if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
-
-    ace->set_basis(*basis_set);
-
-
-    /* TWY: do everything again for second potential so that we have
-            two ACE instances and evaluate forces for both each time,
-            should be a way to loop over an array of basis_set and basis_set2
-            and corresponding potential_file_name to avoid redundancy of code */
-    if (interpolate) {
+    if (!interpolate) {
         if (comm->me == 0) {
-            if (screen) fprintf(screen, "Loading %s\n", potential_file_name2);
-            if (logfile) fprintf(logfile, "Loading %s\n", potential_file_name2);
+            if (screen) fprintf(screen, "Loading %s\n", potential_file_name);
+            if (logfile) fprintf(logfile, "Loading %s\n", potential_file_name);
         }
         try {
-            basis_set2->load(potential_file_name2);
+            basis_set->load(potential_file_name);
         } catch (...) {
-            basis_set2->load_yaml(potential_file_name2);
+            basis_set->load_yaml(potential_file_name);
         }
 
         if (comm->me == 0) {
             if (screen) fprintf(screen, "Total number of basis functions\n");
             if (logfile) fprintf(logfile, "Total number of basis functions\n");
 
-            for (SPECIES_TYPE mu = 0; mu < basis_set2->nelements; mu++) {
-                int n_r1 = basis_set2->total_basis_size_rank1[mu];
-            	int n = basis_set2->total_basis_size[mu];
-            	if (screen) fprintf(screen, "\t%s: %d (r=1) %d (r>1)\n", basis_set2->elements_name[mu].c_str(), n_r1, n);
-            	if (logfile) fprintf(logfile, "\t%s: %d (r=1) %d (r>1)\n", basis_set2->elements_name[mu].c_str(), n_r1, n);
+            for (SPECIES_TYPE mu = 0; mu < basis_set->nelements; mu++) {
+                int n_r1 = basis_set->total_basis_size_rank1[mu];
+                int n = basis_set->total_basis_size[mu];
+                if (screen) fprintf(screen, "\t%s: %d (r=1) %d (r>1)\n", basis_set->elements_name[mu].c_str(), n_r1, n);
+                if (logfile) fprintf(logfile, "\t%s: %d (r=1) %d (r>1)\n", basis_set->elements_name[mu].c_str(), n_r1, n);
             }
         }
 
-    	// read args that map atom types to pACE elements
-    	// map[i] = which element the Ith atom type is, -1 if not mapped
-    	// map[0] is not used
+        // read args that map atom types to pACE elements
+        // map[i] = which element the Ith atom type is, -1 if not mapped
+        // map[0] is not used
 
-    	ace2 = new ACERecursiveEvaluator();
-    	ace2->set_recursive(recursive);
-    	ace2->element_type_mapping.init(atom->ntypes + 1);
+        ace = new ACERecursiveEvaluator();
+        ace->set_recursive(recursive);
+        ace->element_type_mapping.init(atom->ntypes + 1);
 
-    	for (int i = 1; i <= atom->ntypes; i++) {
+        for (int i = 1; i <= atom->ntypes; i++) {
             char *elemname = elemtypes[i - 1];
             int atomic_number = AtomicNumberByName_pace(elemname);
             if (atomic_number == -1) {
                 char error_msg[1024];
-            	snprintf(error_msg, 1024, "String '%s' is not a valid element\n", elemname);
-            	error->all(FLERR, error_msg);
+                snprintf(error_msg, 1024, "String '%s' is not a valid element\n", elemname);
+                error->all(FLERR, error_msg);
             }
-            SPECIES_TYPE mu = basis_set2->get_species_index_by_name(elemname);
+            SPECIES_TYPE mu = basis_set->get_species_index_by_name(elemname);
             if (mu != -1) {
                 if (comm->me == 0) {
                     if (screen)
@@ -591,21 +555,122 @@ void PairPACE::coeff(int narg, char **arg) {
                         fprintf(logfile, "Mapping LAMMPS atom type #%d(%s) -> ACE species type #%d\n", i, elemname, mu);
                 }
                 map[i] = mu;
-                ace2->element_type_mapping(i) = mu; // set up LAMMPS atom type to ACE species  mapping for ace evaluator
+                ace->element_type_mapping(i) = mu; // set up LAMMPS atom type to ACE species  mapping for ace evaluator
             } else {
-            	char error_msg[1024];
-            	snprintf(error_msg, 1024, "Element %s is not supported by ACE-potential from file %s", elemname,
-                     potential_file_name2);
-            	error->all(FLERR, error_msg);
+                char error_msg[1024];
+                snprintf(error_msg, 1024, "Element %s is not supported by ACE-potential from file %s", elemname,
+                        potential_file_name);
+                error->all(FLERR, error_msg);
             }
         }
 
-    	/* TWY: removed setflag and scale which were set previously,
-                this is dangerous as second potential isn't checked properly,
-                make second set of these variables to fix this */
+        // clear setflag since coeff() called once with I,J = * *
+        int n = atom->ntypes;
+        for (int i = 1; i <= n; i++) {
+            for (int j = i; j <= n; j++) {
+                setflag[i][j] = 1;
+                scale[i][j] = 1.0;
+            }
+        }
+
+        // set setflag i,j for type pairs where both are mapped to elements
+
+        int count = 1;
+        for (int i = 1; i <= n; i++)
+            for (int j = i; j <= n; j++)
+                if (map[i] >= 0 && map[j] >= 0) {
+                    setflag[i][j] = 1;
+                    count++;
+                }
+
+        if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
+
+        ace->set_basis(*basis_set);
+    } else {
+        // TWY: loop over all potential files
+        std::vector<ACERecursiveEvaluator *> ace_list;
+        ace_list.reserve(nbasis);
+        for (int x = 0; x < nbasis; x++) {
+            if (comm->me == 0) {
+                if (screen) fprintf(screen, "Loading %s\n", potential_file_name_list[x]);
+                if (logfile) fprintf(logfile, "Loading %s\n", potential_file_name_list[x]);
+            }
+            try {
+                basis_set_list[x]->load(potential_file_name_list[x]);
+            } catch (...) {
+                basis_set_list[x]->load_yaml(potential_file_name_list[x]);
+            }
+
+            if (comm->me == 0) {
+                if (screen) fprintf(screen, "Total number of basis functions\n");
+                if (logfile) fprintf(logfile, "Total number of basis functions\n");
+
+                for (SPECIES_TYPE mu = 0; mu < basis_set_list[x]->nelements; mu++) {
+                    int n_r1 = basis_set_list[x]->total_basis_size_rank1[mu];
+                    int n = basis_set_list[x]->total_basis_size[mu];
+                    if (screen) fprintf(screen, "\t%s: %d (r=1) %d (r>1)\n", basis_set_list[x]->elements_name[mu].c_str(), n_r1, n);
+                    if (logfile) fprintf(logfile, "\t%s: %d (r=1) %d (r>1)\n", basis_set_list[x]->elements_name[mu].c_str(), n_r1, n);
+                }
+            }
+
+            // read args that map atom types to pACE elements
+            // map[i] = which element the Ith atom type is, -1 if not mapped
+            // map[0] is not used
+
+            ace_list.push_back(new ACERecursiveEvaluator());
+            ace_list[x]->set_recursive(recursive);
+            ace_list[x]->element_type_mapping.init(atom->ntypes + 1);
+
+            for (int i = 1; i <= atom->ntypes; i++) {
+                char *elemname = elemtypes[i - 1];
+                int atomic_number = AtomicNumberByName_pace(elemname);
+                if (atomic_number == -1) {
+                    char error_msg[1024];
+                    snprintf(error_msg, 1024, "String '%s' is not a valid element\n", elemname);
+                    error->all(FLERR, error_msg);
+                }
+                SPECIES_TYPE mu = basis_set_list[x]->get_species_index_by_name(elemname);
+                if (mu != -1) {
+                    if (comm->me == 0) {
+                        if (screen)
+                            fprintf(screen, "Mapping LAMMPS atom type #%d(%s) -> ACE species type #%d\n", i, elemname, mu);
+                        if (logfile)
+                            fprintf(logfile, "Mapping LAMMPS atom type #%d(%s) -> ACE species type #%d\n", i, elemname, mu);
+                    }
+                    map[i] = mu;
+                    ace_list[x]->element_type_mapping(i) = mu; // set up LAMMPS atom type to ACE species  mapping for ace evaluator
+                } else {
+                    char error_msg[1024];
+                    snprintf(error_msg, 1024, "Element %s is not supported by ACE-potential from file %s", elemname,
+                        potential_file_name_list[x]);
+                    error->all(FLERR, error_msg);
+                }
+            }
+
+            // clear setflag since coeff() called once with I,J = * *
+            int n = atom->ntypes;
+            for (int i = 1; i <= n; i++) {
+                for (int j = i; j <= n; j++) {
+                    setflag[i][j] = 1;
+                    scale[i][j] = 1.0;
+                }
+            }
+
+            // set setflag i,j for type pairs where both are mapped to elements
+
+            int count = 1;
+            for (int i = 1; i <= n; i++)
+                for (int j = i; j <= n; j++)
+                    if (map[i] >= 0 && map[j] >= 0) {
+                        setflag[i][j] = 1;
+                        count++;
+                    }
+
+            if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
 
 
-    	ace2->set_basis(*basis_set2);
+            ace_list[x]->set_basis(*basis_set_list[x]);
+        }
     }
 }
 
@@ -633,9 +698,13 @@ double PairPACE::init_one(int i, int j) {
     if (setflag[i][j] == 0) error->all(FLERR, "All pair coeffs are not set");
     //cutoff from the basis set's radial functions settings
     scale[j][i] = scale[i][j];
-    /* TWY: currently assuming cutoff (and radial functions) are the same in
-            both interpolation potentials. This may not always be true, though. */
-    return basis_set->radial_functions->cut(map[i], map[j]);
+    if (!interpolate) {
+        return basis_set->radial_functions->cut(map[i], map[j]);
+    } else {
+        /* TWY: currently assuming cutoff (and radial functions) are the same in
+                all interpolation potentials. This may not always be true, though. */
+        return basis_set_list[0]->radial_functions->cut(map[i], map[j]);
+    }
 }
 
 /* ----------------------------------------------------------------------

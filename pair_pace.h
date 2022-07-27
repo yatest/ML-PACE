@@ -68,18 +68,9 @@ namespace LAMMPS_NS {
     protected:
         ACECTildeBasisSet *basis_set = nullptr;
 
-        // TWY: second basis set used in interpolation
-        ACECTildeBasisSet *basis_set2 = nullptr;
-
         ACERecursiveEvaluator* ace = nullptr;
 
-        // TWY: second evaluator used in interpolation
-        ACERecursiveEvaluator* ace2 = nullptr;
-
         char *potential_file_name;
-
-        // TWY: second potential file used in interpolation
-        char *potential_file_name2;
 
         virtual void allocate();
 
@@ -92,8 +83,7 @@ namespace LAMMPS_NS {
         int nelements;                // # of unique elements
         char **elements;              // names of unique elements
 
-        double lf;                    // TWY: fraction of lower potential to use
-                                      // NOTE: always assumed to be the first potential
+        double T_e_avg;               // average electronic temperature
 
         int *map;                     // mapping from atom types to elements
         int *jlist_local;
