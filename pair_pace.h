@@ -70,7 +70,7 @@ namespace LAMMPS_NS {
 
         ACERecursiveEvaluator* ace = nullptr;
 
-        std::vector<char *> potential_file_name_list;
+        std::vector<const char *> potential_file_name_list;
 
         std::vector<int> temps_list;
 
@@ -85,6 +85,8 @@ namespace LAMMPS_NS {
         void read_files(char *, char *);
 
         inline int equal(double *x, double *y);
+
+        int nbasis;
 
 
         double rcutmax;               // max cutoff for all elements

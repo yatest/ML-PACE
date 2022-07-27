@@ -111,11 +111,11 @@ PairPACE::~PairPACE() {
     delete[] elements;
 
     delete[] potential_file_name;
-    std::vector<char *>::iterator itp;
+    std::vector<const char *>::iterator itp;
     for (itp = potential_file_name_list.begin(); itp != potential_file_name_list.end(); ++itp){
         delete *itp;
     }
-    std::vector<char *>().swap(potential_file_name_list);
+    std::vector<const char *>().swap(potential_file_name_list);
     itp.std::vector<char *>::iterator::~iterator();
 
     delete basis_set;
@@ -124,7 +124,7 @@ PairPACE::~PairPACE() {
         delete *itb;
     }
     std::vector<ACECTildeBasisSet *>().swap(basis_set_list);
-    itb.std::vector<char *>::iterator::~iterator();
+    itb.std::vector<ACECTildeBasisSet>::iterator::~iterator();
 
     delete ace;
     std::vector<ACERecursiveEvaluator *>::iterator ita;
@@ -132,7 +132,7 @@ PairPACE::~PairPACE() {
         delete *ita;
     }
     std::vector<ACERecursiveEvaluator *>().swap(ace_list);
-    ita.std::vector<char *>::iterator::~iterator();
+    ita.std::vector<ACERecursiveEvaluator>::iterator::~iterator();
 
     if (allocated) {
         memory->destroy(setflag);
@@ -475,7 +475,7 @@ void PairPACE::coeff(int narg, char **arg) {
         basis_set = new ACECTildeBasisSet();
     } else {
         // load ACE potential file names from potential_file_name
-        int nbasis = 0;
+        nbasis = 0;
         //string line;
         //std::vector<char *> potential_file_name_list;
         //std::vector<int> temps_list;
@@ -498,7 +498,6 @@ void PairPACE::coeff(int narg, char **arg) {
             ++nbasis;
         }
         if (nbasis == 0) error->all(FLERR, "Could not read potential file names");
-    }
 
         // TWY: load all potential files if interpolating
         // access individual objects as basis_set_list[i]
