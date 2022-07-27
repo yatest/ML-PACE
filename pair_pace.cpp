@@ -111,28 +111,28 @@ PairPACE::~PairPACE() {
     delete[] elements;
 
     delete[] potential_file_name;
-    std::vector<char *>::iterator it;
-    for (it = potential_file_name_list.begin(); it != potential_file_name_list.end(); ++it){
-        delete[] it;
+    std::vector<char *>::iterator itp;
+    for (itp = potential_file_name_list.begin(); itp != potential_file_name_list.end(); ++itp){
+        delete *itp;
     }
     std::vector<char *>().swap(potential_file_name_list);
-    it.std::vector<char *>::iterator::~iterator();
+    itp.std::vector<char *>::iterator::~iterator();
 
     delete basis_set;
-    std::vector<ACECTildeBasisSet *>::iterator it;
-    for (it = basis_set_list.begin(); it != basis_set_list.end(); ++it){
-        delete it;
+    std::vector<ACECTildeBasisSet *>::iterator itb;
+    for (itb = basis_set_list.begin(); itb != basis_set_list.end(); ++itb){
+        delete *itb;
     }
     std::vector<ACECTildeBasisSet *>().swap(basis_set_list);
-    it.std::vector<char *>::iterator::~iterator();
+    itb.std::vector<char *>::iterator::~iterator();
 
     delete ace;
-    std::vector<ACERecursiveEvaluator *>::iterator it;
-    for (it = ace_list.begin(); it != ace_list.end(); ++it){
-        delete it;
+    std::vector<ACERecursiveEvaluator *>::iterator ita;
+    for (ita = ace_list.begin(); ita != ace_list.end(); ++ita){
+        delete *ita;
     }
     std::vector<ACERecursiveEvaluator *>().swap(ace_list);
-    it.std::vector<char *>::iterator::~iterator();
+    ita.std::vector<char *>::iterator::~iterator();
 
     if (allocated) {
         memory->destroy(setflag);
