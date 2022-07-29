@@ -464,7 +464,6 @@ void PairPACE::coeff(int narg, char **arg) {
     char *type1 = arg[0];
     char *type2 = arg[1];
     char *potential_file_name = arg[2];
-    fprintf(screen, "potential_file_name = %s", arg[2]);
     char **elemtypes = &arg[3];
 
     // insure I,J args are * *
@@ -485,7 +484,6 @@ void PairPACE::coeff(int narg, char **arg) {
             //infile.open(potential_file_name);
             fprintf(screen, "potential_file_name = %s", potential_file_name);
             PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
-            fprintf(screen, "next_line = %s", reader.next_line());
             //if (!infile.is_open())
             //    throw invalid_argument("Could not open file " + filename);
             //while(getline(infile, line)){
@@ -495,7 +493,6 @@ void PairPACE::coeff(int narg, char **arg) {
             int nwords = 2;
             while (nwords == 2) {
                 char *line = reader.next_line();
-                fprintf(screen, "*line = %s", *line);
                 fprintf(screen, "line = %s", line);
                 nwords = utils::count_words(line);
                 auto line_token = ValueTokenizer(line);
@@ -503,7 +500,7 @@ void PairPACE::coeff(int narg, char **arg) {
                 potential_file_name_list.push_back(line_token.next_string().c_str());
                 ++nbasis;
             }
-            if (nbasis < 2) error->all(FLERR, "Could not read potential file names");
+            if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
 
             // TWY: load all potential files if interpolating
             // access individual objects as basis_set_list[i]
