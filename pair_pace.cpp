@@ -497,6 +497,8 @@ void PairPACE::coeff(int narg, char **arg) {
                 nwords = utils::count_words(line);
                 if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
                 auto line_token = ValueTokenizer(line);
+                fprintf(screen, "%d", line_token.next_int());
+                fprintf(screen, "%s", line_token.next_string().c_str());
                 temps_list.push_back(line_token.next_int());
                 potential_file_name_list.push_back(line_token.next_string().c_str());
                 ++nbasis;
