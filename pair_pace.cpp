@@ -474,38 +474,40 @@ void PairPACE::coeff(int narg, char **arg) {
         //load potential file
         basis_set = new ACECTildeBasisSet();
     } else {
-        // load ACE potential file names from potential_file_name
-        nbasis = 0;
-        //string line;
-        //std::vector<char *> potential_file_name_list;
-        //std::vector<int> temps_list;
-        //std::ifstream infile;
-        //infile.open(potential_file_name);
-        PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
-        //if (!infile.is_open())
-        //    throw invalid_argument("Could not open file " + filename);
-        //while(getline(infile, line)){
-            //read number of files and names
-        //    potential_file_name_list.push_back(const_cast<char *>(line.c_str()));
-        //    ++nbasis;
-        int nwords = 2;
-        while (nwords == 2) {
-            char *line = reader.next_line();
-            nwords = utils::count_words(line);
-            auto line_token = ValueTokenizer(line);
-            temps_list.push_back(line_token.next_int());
-            potential_file_name_list.push_back(line_token.next_string().c_str());
-            ++nbasis;
-        }
-        if (nbasis == 0) error->all(FLERR, "Could not read potential file names");
+        if (comm->me == 0) {
+            // load ACE potential file names from potential_file_name
+            nbasis = 0;
+            //string line;
+            //std::vector<char *> potential_file_name_list;
+            //std::vector<int> temps_list;
+            //std::ifstream infile;
+            //infile.open(potential_file_name);
+            PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
+            //if (!infile.is_open())
+            //    throw invalid_argument("Could not open file " + filename);
+            //while(getline(infile, line)){
+                //read number of files and names
+            //    potential_file_name_list.push_back(const_cast<char *>(line.c_str()));
+            //    ++nbasis;
+            int nwords = 2;
+            while (nwords == 2) {
+                char *line = reader.next_line();
+                nwords = utils::count_words(line);
+                auto line_token = ValueTokenizer(line);
+                temps_list.push_back(line_token.next_int());
+                potential_file_name_list.push_back(line_token.next_string().c_str());
+                ++nbasis;
+            }
+            if (nbasis == 0) error->all(FLERR, "Could not read potential file names");
 
-        // TWY: load all potential files if interpolating
-        // access individual objects as basis_set_list[i]
-        // DELETE ACECTildeBasisSet * OBJECTS AT END
-        //std::vector<ACECTildeBasisSet *> basis_set_list;
-        basis_set_list.reserve(nbasis);
-        for (int i = 0; i < nbasis; i++) {
-            basis_set_list.push_back(new ACECTildeBasisSet());
+            // TWY: load all potential files if interpolating
+            // access individual objects as basis_set_list[i]
+            // DELETE ACECTildeBasisSet * OBJECTS AT END
+            //std::vector<ACECTildeBasisSet *> basis_set_list;
+            basis_set_list.reserve(nbasis);
+            for (int i = 0; i < nbasis; i++) {
+                basis_set_list.push_back(new ACECTildeBasisSet());
+            }
         }
     }
 
