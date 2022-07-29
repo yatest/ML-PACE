@@ -492,13 +492,15 @@ void PairPACE::coeff(int narg, char **arg) {
             int nwords = 2;
             while (nwords == 2) {
                 char *line = reader.next_line();
+                fprintf(screen, "*line", *line);
+                fprintf(screen, "line", line);
                 nwords = utils::count_words(line);
                 auto line_token = ValueTokenizer(line);
                 temps_list.push_back(line_token.next_int());
                 potential_file_name_list.push_back(line_token.next_string().c_str());
                 ++nbasis;
             }
-            if (nbasis == 0) error->all(FLERR, "Could not read potential file names");
+            if (nbasis < 2) error->all(FLERR, "Could not read potential file names");
 
             // TWY: load all potential files if interpolating
             // access individual objects as basis_set_list[i]
