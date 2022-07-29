@@ -492,8 +492,8 @@ void PairPACE::coeff(int narg, char **arg) {
             int nwords = 2;
             while (nwords == 2) {
                 char *line = reader.next_line();
-                fprintf(screen, "*line", *line);
-                fprintf(screen, "line", line);
+                fprintf(screen, "*line = %s", *line);
+                fprintf(screen, "line = %s", line);
                 nwords = utils::count_words(line);
                 auto line_token = ValueTokenizer(line);
                 temps_list.push_back(line_token.next_int());
