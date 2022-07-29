@@ -502,9 +502,9 @@ void PairPACE::coeff(int narg, char **arg) {
                 ++nbasis;
             }
             if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
-
+            fprintf(screen, "%s", potential_file_name_list[0]);
             for (int x = 0; x < nbasis; x++) {
-                fprintf(screen, "%s", potential_file_name_list[x])
+                fprintf(screen, "%s", potential_file_name_list[x]);
             }
 
             // TWY: load all potential files if interpolating
