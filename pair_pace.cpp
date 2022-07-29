@@ -111,12 +111,12 @@ PairPACE::~PairPACE() {
     delete[] elements;
 
     delete[] potential_file_name;
-    std::vector<string>::iterator itp;
-    for (itp = potential_file_name_list.begin(); itp != potential_file_name_list.end(); ++itp){
-        delete *itp;
-    }
+    //std::vector<string>::iterator itp;
+    //for (itp = potential_file_name_list.begin(); itp != potential_file_name_list.end(); ++itp){
+    //    delete *itp;
+    //}
     std::vector<string>().swap(potential_file_name_list);
-    itp.std::vector<string>::iterator::~iterator();
+    //itp.std::vector<string>::iterator::~iterator();
 
     delete basis_set;
     std::vector<ACECTildeBasisSet *>::iterator itb;
