@@ -464,6 +464,7 @@ void PairPACE::coeff(int narg, char **arg) {
     char *type1 = arg[0];
     char *type2 = arg[1];
     char *potential_file_name = arg[2];
+    fprintf(screen, "potential_file_name = %s", arg[2]);
     char **elemtypes = &arg[3];
 
     // insure I,J args are * *
