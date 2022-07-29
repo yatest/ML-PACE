@@ -724,6 +724,8 @@ double PairPACE::init_one(int i, int j) {
     if (!interpolate) {
         return basis_set->radial_functions->cut(map[i], map[j]);
     } else {
+        fprintf(screen,"init_one checkpoint");
+        fprintf(screen,"crad[0] = %f", basis_set_list[0]->radial_functions->crad(0, 0, 0, 0, 0));
         /* TWY: currently assuming cutoff (and radial functions) are the same in
                 all interpolation potentials. This may not always be true, though. */
         return basis_set_list[0]->radial_functions->cut(map[i], map[j]);
