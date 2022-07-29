@@ -500,13 +500,13 @@ void PairPACE::coeff(int narg, char **arg) {
                 temps_list.push_back(line_token.next_int());
                 potential_file_name_list.push_back(line_token.next_string());
                 fprintf(screen, "temp[%d] = %d\n", nbasis, temps_list[nbasis]);
-                fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis]);
+                fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis].c_str());
                 ++nbasis;
             }
             if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
-            fprintf(screen, "%s", potential_file_name_list[0]);
+            fprintf(screen, "%s", potential_file_name_list[0].cstr());
             for (int x = 0; x < nbasis; x++) {
-                fprintf(screen, "%s", potential_file_name_list[x]);
+                fprintf(screen, "%s", potential_file_name_list[x].c_str());
                 fprintf(screen, "%d", temps_list[x]);
             }
 
@@ -684,6 +684,8 @@ void PairPACE::coeff(int narg, char **arg) {
 
 
             ace_list[x]->set_basis(*basis_set_list[x]);
+            fprintf(screen,"crad[0] = %f", basis_set_list[x]->radial_functions->crad(0, 0, 0, 0, 0));
+            fprintf(screen,"get_all_coeffs[0] = %f", basis_set_list[x]->get_all_coeffs[0]);
         }
     }
 }
