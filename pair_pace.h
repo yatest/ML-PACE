@@ -70,7 +70,7 @@ namespace LAMMPS_NS {
 
         ACERecursiveEvaluator* ace = nullptr;
 
-        std::vector<const char *> potential_file_name_list;
+        std::vector<string> potential_file_name_list;
 
         std::vector<int> temps_list;
 
