@@ -483,7 +483,7 @@ void PairPACE::coeff(int narg, char **arg) {
             //std::vector<int> temps_list;
             //std::ifstream infile;
             //infile.open(potential_file_name);
-            fprintf(screen, "potential_file_name = %s", *potential_file_name);
+            fprintf(screen, "potential_file_name = %s", potential_file_name);
             PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
             fprintf(screen, "next_line = %s", reader.next_line());
             //if (!infile.is_open())
