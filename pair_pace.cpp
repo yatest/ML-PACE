@@ -498,7 +498,7 @@ void PairPACE::coeff(int narg, char **arg) {
                 if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
                 auto line_token = ValueTokenizer(line);
                 temps_list.push_back(line_token.next_int());
-                potential_file_name_list.push_back(line_token.next_string().c_str());
+                potential_file_name_list.emplace_back(line_token.next_string().c_str());
                 fprintf(screen, "temp[%d] = %d\n", nbasis, temps_list[nbasis]);
                 fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis]);
                 ++nbasis;
@@ -507,6 +507,7 @@ void PairPACE::coeff(int narg, char **arg) {
             fprintf(screen, "%s", potential_file_name_list[0]);
             for (int x = 0; x < nbasis; x++) {
                 fprintf(screen, "%s", potential_file_name_list[x]);
+                fprintf(screen, "%d", temps_list[x]);
             }
 
             // TWY: load all potential files if interpolating
