@@ -117,6 +117,7 @@ PairPACE::~PairPACE() {
     //}
     std::vector<string>().swap(potential_file_name_list);
     //itp.std::vector<string>::iterator::~iterator();
+    std::vector<int>().swap(temps_list);
 
     delete basis_set;
     std::vector<ACECTildeBasisSet *>::iterator itb;
@@ -151,7 +152,7 @@ void PairPACE::compute(int eflag, int vflag) {
     int *ilist, *jlist, *numneigh, **firstneigh;
 
     ev_init(eflag, vflag);
-
+    fprintf(screen,"Checkpoint 1 reached.\n")
     // downwards modified by YL
 
     double **x = atom->x;
@@ -185,7 +186,7 @@ void PairPACE::compute(int eflag, int vflag) {
         error->all(FLERR, str);
     }
 
-
+    fprintf(screen,"Checkpoint 2 reached.\n")
     // Aidan Thompson told RD (26 July 2019) that practically always holds:
     // inum = nlocal
     // i = ilist(ii) < inum
@@ -213,7 +214,7 @@ void PairPACE::compute(int eflag, int vflag) {
             ace_list[k]->resize_neighbours_cache(max_jnum);   
         }
     }
-
+    fprintf(screen,"Checkpoint 3 reached.\n")
     //loop over atoms
     for (ii = 0; ii < list->inum; ii++) {
         i = list->ilist[ii];
@@ -242,6 +243,8 @@ void PairPACE::compute(int eflag, int vflag) {
             }
         } else {
         // TWY: repeat for all potentials
+        // Can we only repeat for the two potentials bounding T_e_avg?
+        // Would it cause issues if the other potentials aren't kept updated?
             for (k = 0; k < nbasis; k++) {
                 try {
                     ace_list[k]->compute_atom(i, x, type, jnum, jlist);
@@ -251,6 +254,7 @@ void PairPACE::compute(int eflag, int vflag) {
                 }
             }
         }
+        fprintf(screen,"Checkpoint 4 reached.\n")
         // 'compute_atom' will update the `ace->e_atom` and `ace->neighbours_forces(jj, alpha)` arrays
 
         for (jj = 0; jj < jnum; jj++) {
@@ -275,6 +279,8 @@ void PairPACE::compute(int eflag, int vflag) {
                         fij[2] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 2) +
                             (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 2));
                         break;
+                    } else {
+                        error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
                     }
                 }
             } else {
@@ -296,17 +302,18 @@ void PairPACE::compute(int eflag, int vflag) {
                              fij[0], fij[1], fij[2],
                              -delx, -dely, -delz);
         }
-
+        fprintf(screen,"Checkpoint 5 reached.\n")
         // tally energy contribution
         if (eflag) {
             // evdwl = energy of atom I
             if (interpolate) {
                 evdwl = scale[1][1] * (a*ace_list[T_l]->e_atom + (1.0-a)*ace_list[T_u]->e_atom);
-	    } else {
-		evdwl = scale[1][1] * ace->e_atom;
-              }
+	        } else {
+		        evdwl = scale[1][1] * ace->e_atom;
+            }
             ev_tally_full(i, 2.0 * evdwl, 0.0, 0.0, 0.0, 0.0, 0.0);
         }            
+        fprintf(screen,"Checkpoint 6 reached.\n")
     }
 
     if (vflag_fdotr) virial_fdotr_compute();
