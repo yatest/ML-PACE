@@ -274,6 +274,9 @@ void PairPACE::compute(int eflag, int vflag) {
                             (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 1));
                         fij[2] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 2) +
                             (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 2));
+                        fprintf(screen,"T_u = %d", temps_list[T_u]);
+                        fprintf(screen,"T_l = %d", temps_list[T_l]);
+                        fprintf(screen,"a = %f", a);
                         break;
                     } else if (k == (nbasis-1)) {
                         error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
