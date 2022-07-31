@@ -279,7 +279,7 @@ void PairPACE::compute(int eflag, int vflag) {
                         fij[2] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 2) +
                             (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 2));
                         break;
-                    } else {
+                    } else if (k == (nbasis-1)) {
                         error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
                     }
                 }
@@ -724,11 +724,15 @@ double PairPACE::init_one(int i, int j) {
     if (!interpolate) {
         return basis_set->radial_functions->cut(map[i], map[j]);
     } else {
+        // all procs != 0 do not currently have the basis functions etc. loaded yet
+        // maybe MPI_Reduce or such call?
+        if (comm->me == 0) {
         fprintf(screen,"init_one checkpoint");
         fprintf(screen,"crad[0] = %f", basis_set_list[0]->radial_functions->crad(0, 0, 0, 0, 0));
         /* TWY: currently assuming cutoff (and radial functions) are the same in
                 all interpolation potentials. This may not always be true, though. */
         return basis_set_list[0]->radial_functions->cut(map[i], map[j]);
+        }
     }
 }
 
