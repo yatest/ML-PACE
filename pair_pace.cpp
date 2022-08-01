@@ -735,11 +735,10 @@ double PairPACE::init_one(int i, int j) {
         // the if (comm->me == 0) command required to use PotentialFileReader as the normal
         // ACE doesn't have this issue. Need to find a way of getting the variables/vectors
         // from proc 0 to the other procs.
-        if (comm->me == 0) {
-            /* TWY: currently assuming cutoff (and radial functions) are the same in
-                    all interpolation potentials. This may not always be true, though. */
-            return basis_set_list[0]->radial_functions->cut(map[i], map[j]);
-        }
+        
+        /* TWY: currently assuming cutoff (and radial functions) are the same in
+                all interpolation potentials. This may not always be true, though. */
+        return basis_set_list[0]->radial_functions->cut(map[i], map[j]);
     }
 }
 
