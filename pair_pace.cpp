@@ -505,20 +505,27 @@ void PairPACE::coeff(int narg, char **arg) {
                 ++nbasis;
             }
             if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
-            fprintf(screen, "%s", potential_file_name_list[0].c_str());
             for (int x = 0; x < nbasis; x++) {
                 fprintf(screen, "%s", potential_file_name_list[x].c_str());
                 fprintf(screen, "%d", temps_list[x]);
             }
+        }
 
-            // TWY: load all potential files if interpolating
-            // access individual objects as basis_set_list[i]
-            // DELETE ACECTildeBasisSet * OBJECTS AT END
-            //std::vector<ACECTildeBasisSet *> basis_set_list;
-            basis_set_list.reserve(nbasis);
-            for (int i = 0; i < nbasis; i++) {
-                basis_set_list.push_back(new ACECTildeBasisSet());
-            }
+        MPI_Bcast(&nbasis,1,MPI_INT,0,world);
+        if (comm->me != 0) {
+            temps_list.resize(nbasis);
+            potential_file_name_list.resize(nbasis);
+        }
+        MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
+        MPI_Bcast(&potential_file_name_list[0],potential_file_name_list.size()*sizeof(decltype(potential_file_name_list)::value_type),MPI_BYTE,0,world);
+
+        // TWY: load all potential files if interpolating
+        // access individual objects as basis_set_list[i]
+        // DELETE ACECTildeBasisSet * OBJECTS AT END
+        //std::vector<ACECTildeBasisSet *> basis_set_list;
+        basis_set_list.reserve(nbasis);
+        for (int i = 0; i < nbasis; i++) {
+            basis_set_list.push_back(new ACECTildeBasisSet());
         }
     }
 
@@ -718,8 +725,12 @@ double PairPACE::init_one(int i, int j) {
     if (!interpolate) {
         return basis_set->radial_functions->cut(map[i], map[j]);
     } else {
-        // all procs != 0 do not currently have the basis functions etc. loaded yet
-        // maybe MPI_Reduce or such call?
+        // all procs != 0 do not currently have the basis functions, etc. loaded yet
+        // maybe MPI_Bcast or such call?
+        // I think it's likely that this issue is only occuring for the variables defined within
+        // the if (comm->me == 0) command required to use PotentialFileReader as the normal
+        // ACE doesn't have this issue. Need to find a way of getting the variables/vectors
+        // from proc 0 to the other procs.
         if (comm->me == 0) {
             /* TWY: currently assuming cutoff (and radial functions) are the same in
                     all interpolation potentials. This may not always be true, though. */
