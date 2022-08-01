@@ -511,13 +511,13 @@ void PairPACE::coeff(int narg, char **arg) {
             }
         }
 
-        MPI_Bcast(&nbasis,1,MPI_INT,0,world);
-        if (comm->me != 0) {
-            temps_list.resize(nbasis);
-            potential_file_name_list.resize(nbasis);
-        }
-        MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
-        MPI_Bcast(&potential_file_name_list[0],potential_file_name_list.size()*sizeof(decltype(potential_file_name_list)::value_type),MPI_BYTE,0,world);
+        // MPI_Bcast(&nbasis,1,MPI_INT,0,world);
+        // if (comm->me != 0) {
+            // temps_list.resize(nbasis);
+            // potential_file_name_list.resize(nbasis);
+        // }
+        // MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
+        // MPI_Bcast(&potential_file_name_list[0],potential_file_name_list.size()*sizeof(decltype(potential_file_name_list)::value_type),MPI_BYTE,0,world);
         if (comm->me != 0) {
             fprintf(screen, "temps_list[0] = %d", temps_list[0]);
             fprintf(screen, "potential_file_name_list[0] = %s", potential_file_name_list[0]);
@@ -735,7 +735,7 @@ double PairPACE::init_one(int i, int j) {
         // the if (comm->me == 0) command required to use PotentialFileReader as the normal
         // ACE doesn't have this issue. Need to find a way of getting the variables/vectors
         // from proc 0 to the other procs.
-        
+
         /* TWY: currently assuming cutoff (and radial functions) are the same in
                 all interpolation potentials. This may not always be true, though. */
         return basis_set_list[0]->radial_functions->cut(map[i], map[j]);
