@@ -511,11 +511,6 @@ void PairPACE::coeff(int narg, char **arg) {
             }
         }
 
-        if (comm->me != 0) {
-            fprintf(screen, "Checkpoint 1");
-            fprintf(logfile, "Checkpoint 1");
-        }
-
         MPI_Bcast(&nbasis,1,MPI_INT,0,world);
         if (comm->me != 0) {
             temps_list.resize(nbasis);
