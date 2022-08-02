@@ -511,12 +511,12 @@ void PairPACE::coeff(int narg, char **arg) {
             }
         }
 
-        MPI_Bcast(&nbasis,1,MPI_INT,0,world);
-        if (comm->me != 0) {
-            temps_list.resize(nbasis);
-            potential_file_name_list.resize(nbasis);
-        }
-        MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
+        // MPI_Bcast(&nbasis,1,MPI_INT,0,world);
+        // if (comm->me != 0) {
+            // temps_list.resize(nbasis);
+            // potential_file_name_list.resize(nbasis);
+        // }
+        // MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
         // MPI_Bcast(&potential_file_name_list[0],potential_file_name_list.size()*sizeof(decltype(potential_file_name_list)::value_type),MPI_BYTE,0,world);
         fprintf(screen, "I am running on proc %d", comm->me);
         // if (comm->me != 0) {
