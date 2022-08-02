@@ -518,6 +518,7 @@ void PairPACE::coeff(int narg, char **arg) {
         // }
         // MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
         // MPI_Bcast(&potential_file_name_list[0],potential_file_name_list.size()*sizeof(decltype(potential_file_name_list)::value_type),MPI_BYTE,0,world);
+        fprintf(screen, "I am running on proc %d", comm->me);
         if (comm->me != 0) {
             fprintf(screen, "temps_list[0] = %d", temps_list[0]);
             fprintf(screen, "potential_file_name_list[0] = %s", potential_file_name_list[0]);
