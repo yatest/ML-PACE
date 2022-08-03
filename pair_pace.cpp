@@ -494,7 +494,7 @@ void PairPACE::coeff(int narg, char **arg) {
             int nwords;
             char *line;
             while ((line = reader.next_line())) {
-                fprintf(screen, "line = %s", line);
+                fprintf(screen, "line = %s\n", line);
                 nwords = utils::count_words(line);
                 if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
                 auto line_token = ValueTokenizer(line);
@@ -506,8 +506,8 @@ void PairPACE::coeff(int narg, char **arg) {
             }
             if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
             for (int x = 0; x < nbasis; x++) {
-                fprintf(screen, "%s", potential_file_name_list[x].c_str());
-                fprintf(screen, "%d", temps_list[x]);
+                fprintf(screen, "%s\n", potential_file_name_list[x].c_str());
+                fprintf(screen, "%d\n", temps_list[x]);
             }
         }
 
@@ -530,15 +530,15 @@ void PairPACE::coeff(int narg, char **arg) {
             }
             MPI_Bcast(const_cast<char*>(pot_file_temp.data()), pot_file_len, MPI_CHAR, 0, world);
             if (comm->me != 0) {
-                fprintf(screen, "pot_file_temp = %s", pot_file_temp.c_str());
+                fprintf(screen, "pot_file_temp = %s\n", pot_file_temp.c_str());
                 potential_file_name_list.push_back(pot_file_temp);
-                fprintf(screen, "potential_file_name_list[%d] = %s", x, potential_file_name_list[x].c_str());
+                fprintf(screen, "potential_file_name_list[%d] = %s\n", x, potential_file_name_list[x].c_str());
             }
         }
-        fprintf(screen, "I am running on proc %d", comm->me);
+        fprintf(screen, "I am running on proc %d\n", comm->me);
         if (comm->me != 0) {
-            fprintf(screen, "temps_list[0] = %d", temps_list[0]);
-            fprintf(screen, "potential_file_name_list[0] = %s", potential_file_name_list[0].c_str());
+            fprintf(screen, "temps_list[0] = %d\n", temps_list[0]);
+            fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0].c_str());
         }
 
         // TWY: load all potential files if interpolating
