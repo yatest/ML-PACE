@@ -506,8 +506,8 @@ void PairPACE::coeff(int narg, char **arg) {
             }
             if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
             for (int x = 0; x < nbasis; x++) {
-                fprintf(screen, "%s", potential_file_name_list[x]);
-                fprintf(screen, "%d", temps_list[x]);
+                fprintf(screen, "%s\n", potential_file_name_list[x]);
+                fprintf(screen, "%d\n", temps_list[x]);
             }
         }
 
@@ -521,13 +521,15 @@ void PairPACE::coeff(int narg, char **arg) {
         for (int i = 0; i < nbasis; i++) {
             if (comm->me == 0) pot_file_len = strlen(potential_file_name_list[i])+1;
             MPI_Bcast(&pot_file_len,1,MPI_INT,0,world);
+            if (comm->me == 0) fprintf(screen, "proc 0 pot_file_len = %d\n", pot_file_len);
+            if (comm->me != 0) fprintf(screen, "proc %d pot_file_len = %d\n", comm->me, pot_file_len);
             MPI_Bcast(&potential_file_name_list[i],pot_file_len,MPI_BYTE,0,world);
         }
 
-        fprintf(screen, "I am running on proc %d", comm->me);
+        fprintf(screen, "I am running on proc %d\n", comm->me);
         if (comm->me != 0) {
-            fprintf(screen, "temps_list[0] = %d", temps_list[0]);
-            fprintf(screen, "potential_file_name_list[0] = %s", potential_file_name_list[0]);
+            fprintf(screen, "temps_list[0] = %d\n", temps_list[0]);
+            fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0]);
         }
 
         // TWY: load all potential files if interpolating
