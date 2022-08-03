@@ -483,7 +483,7 @@ void PairPACE::coeff(int narg, char **arg) {
             //std::vector<int> temps_list;
             //std::ifstream infile;
             //infile.open(potential_file_name);
-            fprintf(screen, "potential_file_name = %s", potential_file_name);
+            fprintf(screen, "potential_file_name = %s\n", potential_file_name);
             PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
             //if (!infile.is_open())
             //    throw invalid_argument("Could not open file " + filename);
@@ -494,7 +494,7 @@ void PairPACE::coeff(int narg, char **arg) {
             int nwords;
             char *line;
             while ((line = reader.next_line())) {
-                fprintf(screen, "line = %s\n", line);
+                fprintf(screen, "line = %s", line);
                 nwords = utils::count_words(line);
                 if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
                 auto line_token = ValueTokenizer(line);
@@ -532,6 +532,7 @@ void PairPACE::coeff(int narg, char **arg) {
             if (comm->me != 0) {
                 fprintf(screen, "pot_file_temp = %s\n", pot_file_temp.c_str());
                 potential_file_name_list.push_back(pot_file_temp);
+                fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0].c_str());
                 fprintf(screen, "potential_file_name_list[%d] = %s\n", x, potential_file_name_list[x].c_str());
             }
         }
