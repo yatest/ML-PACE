@@ -493,13 +493,15 @@ void PairPACE::coeff(int narg, char **arg) {
             //    ++nbasis;
             int nwords;
             char *line;
+            string temp_pot_name;
             while ((line = reader.next_line())) {
                 fprintf(screen, "line = %s", line);
                 nwords = utils::count_words(line);
                 if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
                 auto line_token = ValueTokenizer(line);
                 temps_list.push_back(line_token.next_int());
-                potential_file_name_list.push_back(const_cast<char *>(line_token.next_string().c_str()));
+                temp_pot_name = line_token.next_string();
+                potential_file_name_list.push_back(const_cast<char *>(temp_pot_name.c_str()));
                 fprintf(screen, "temp[%d] = %d\n", nbasis, temps_list[nbasis]);
                 fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis]);
                 ++nbasis;
@@ -523,7 +525,8 @@ void PairPACE::coeff(int narg, char **arg) {
             MPI_Bcast(&pot_file_len,1,MPI_INT,0,world);
             if (comm->me == 0) fprintf(screen, "proc 0 pot_file_len = %d\n", pot_file_len);
             if (comm->me != 0) fprintf(screen, "proc %d pot_file_len = %d\n", comm->me, pot_file_len);
-            MPI_Bcast(&potential_file_name_list[i],pot_file_len,MPI_BYTE,0,world);
+            fprintf("")
+            MPI_Bcast(*potential_file_name_list[i],pot_file_len,MPI_BYTE,0,world);
         }
 
         fprintf(screen, "I am running on proc %d\n", comm->me);
