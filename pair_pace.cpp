@@ -532,10 +532,11 @@ void PairPACE::coeff(int narg, char **arg) {
             }
             MPI_Bcast(const_cast<char*>(pot_file_temp.data()), pot_file_len, MPI_CHAR, 0, world);
             if (comm->me != 0) {
-                fprintf(screen, "typeid(pot_file_temp).name() = %s", typeid(pot_file_temp).name());
                 fprintf(screen, "pot_file_temp = %s\n", pot_file_temp.c_str());
-                // potential_file_name_list[x] = pot_file_temp;
                 potential_file_name_list.emplace_back(pot_file_temp);
+                // if we do not set pot_file_temp to a new value as below the previous values of
+                // potential_file_name_list get overwritten by the next value of pot_file_temp (given 
+                // that the strings are the same length). Why is this?
                 pot_file_temp = "blahblahblah";
                 fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0].c_str());
                 fprintf(screen, "potential_file_name_list[%d] = %s\n", x, potential_file_name_list[x].c_str());
