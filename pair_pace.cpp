@@ -111,12 +111,12 @@ PairPACE::~PairPACE() {
     delete[] elements;
 
     delete[] potential_file_name;
-    std::vector<char *>::iterator itp;
-    for (itp = potential_file_name_list.begin(); itp != potential_file_name_list.end(); ++itp){
-       delete *itp;
-    }
-    std::vector<char *>().swap(potential_file_name_list);
-    itp.std::vector<char *>::iterator::~iterator();
+    //std::vector<string>::iterator itp;
+    //for (itp = potential_file_name_list.begin(); itp != potential_file_name_list.end(); ++itp){
+    //    delete *itp;
+    //}
+    std::vector<string>().swap(potential_file_name_list);
+    //itp.std::vector<string>::iterator::~iterator();
     std::vector<int>().swap(temps_list);
 
     delete basis_set;
@@ -493,45 +493,45 @@ void PairPACE::coeff(int narg, char **arg) {
             //    ++nbasis;
             int nwords;
             char *line;
-            string temp_pot_name;
             while ((line = reader.next_line())) {
                 fprintf(screen, "line = %s", line);
                 nwords = utils::count_words(line);
                 if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
                 auto line_token = ValueTokenizer(line);
                 temps_list.push_back(line_token.next_int());
-                temp_pot_name = line_token.next_string();
-                potential_file_name_list.push_back(const_cast<char *>(temp_pot_name.c_str()));
+                potential_file_name_list.push_back(line_token.next_string());
                 fprintf(screen, "temp[%d] = %d\n", nbasis, temps_list[nbasis]);
-                fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis]);
+                fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis].c_str());
                 ++nbasis;
             }
             if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
             for (int x = 0; x < nbasis; x++) {
-                fprintf(screen, "%s\n", potential_file_name_list[x]);
-                fprintf(screen, "%d\n", temps_list[x]);
+                fprintf(screen, "%s", potential_file_name_list[x].c_str());
+                fprintf(screen, "%d", temps_list[x]);
             }
         }
 
         MPI_Bcast(&nbasis,1,MPI_INT,0,world);
         if (comm->me != 0) {
             temps_list.resize(nbasis);
-            potential_file_name_list.resize(nbasis);
         }
         MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
-        int pot_file_len;
-        for (int i = 0; i < nbasis; i++) {
-            if (comm->me == 0) pot_file_len = strlen(potential_file_name_list[i])+1;
-            MPI_Bcast(&pot_file_len,1,MPI_INT,0,world);
-            if (comm->me == 0) fprintf(screen, "proc 0 pot_file_len = %d\n", pot_file_len);
-            if (comm->me != 0) fprintf(screen, "proc %d pot_file_len = %d\n", comm->me, pot_file_len);
-            MPI_Bcast(&potential_file_name_list[i],pot_file_len,MPI_BYTE,0,world);
+        
+        string pot_file_temp;
+        for (int x = 0; x < nbasis; x++) {
+            if (comm->me == 0) pot_file_temp = potential_file_name_list[x];
+            MPI_Bcast(pot_file_temp.c_str(), pot_file_temp.size() + 1, MPI_CHAR, 0, world);
+            if (comm->me != 0) {
+                fprintf(screen, "pot_file_temp = %s", pot_file_temp);
+                potential_file_name_list.push_back(pot_file_temp);
+                fprintf(screen, "potential_file_name_list[%d] = %s", x, potential_file_name_list[x]);
+            }
         }
-
-        fprintf(screen, "I am running on proc %d\n", comm->me);
+        MPI_Bcast(&potential_file_name_list[0],potential_file_name_list.size()*sizeof(decltype(potential_file_name_list)::value_type),MPI_BYTE,0,world);
+        fprintf(screen, "I am running on proc %d", comm->me);
         if (comm->me != 0) {
-            fprintf(screen, "temps_list[0] = %d\n", temps_list[0]);
-            fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0]);
+            fprintf(screen, "temps_list[0] = %d", temps_list[0]);
+            fprintf(screen, "potential_file_name_list[0] = %s", potential_file_name_list[0].c_str());
         }
 
         // TWY: load all potential files if interpolating
@@ -629,8 +629,8 @@ void PairPACE::coeff(int narg, char **arg) {
         ace_list.reserve(nbasis);
         for (int x = 0; x < nbasis; x++) {
             if (comm->me == 0) {
-                if (screen) fprintf(screen, "Loading %s\n", potential_file_name_list[x]);
-                if (logfile) fprintf(logfile, "Loading %s\n", potential_file_name_list[x]);
+                if (screen) fprintf(screen, "Loading %s\n", potential_file_name_list[x].c_str());
+                if (logfile) fprintf(logfile, "Loading %s\n", potential_file_name_list[x].c_str());
             }
             try {
                 basis_set_list[x]->load(potential_file_name_list[x]);
@@ -679,7 +679,7 @@ void PairPACE::coeff(int narg, char **arg) {
                 } else {
                     char error_msg[1024];
                     snprintf(error_msg, 1024, "Element %s is not supported by ACE-potential from file %s", elemname,
-                        potential_file_name_list[x]);
+                        potential_file_name_list[x].c_str());
                     error->all(FLERR, error_msg);
                 }
             }
