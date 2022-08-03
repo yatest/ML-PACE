@@ -525,7 +525,7 @@ void PairPACE::coeff(int narg, char **arg) {
             MPI_Bcast(&pot_file_len,1,MPI_INT,0,world);
             if (comm->me == 0) fprintf(screen, "proc 0 pot_file_len = %d\n", pot_file_len);
             if (comm->me != 0) fprintf(screen, "proc %d pot_file_len = %d\n", comm->me, pot_file_len);
-            MPI_Bcast(*potential_file_name_list[i],pot_file_len,MPI_BYTE,0,world);
+            MPI_Bcast(&potential_file_name_list[i],pot_file_len,MPI_BYTE,0,world);
         }
 
         fprintf(screen, "I am running on proc %d\n", comm->me);
