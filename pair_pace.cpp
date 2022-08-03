@@ -520,11 +520,11 @@ void PairPACE::coeff(int narg, char **arg) {
         std::string pot_file_temp;
         for (int x = 0; x < nbasis; x++) {
             if (comm->me == 0) pot_file_temp = potential_file_name_list[x];
-            MPI_Bcast(pot_file_temp.c_str(), pot_file_temp.size() + 1, MPI_CHAR, 0, world);
+            MPI_Bcast(&pot_file_temp.c_str(), pot_file_temp.size() + 1, MPI_CHAR, 0, world);
             if (comm->me != 0) {
-                fprintf(screen, "pot_file_temp = %s", pot_file_temp);
+                fprintf(screen, "pot_file_temp = %s", pot_file_temp.c_str());
                 potential_file_name_list.push_back(pot_file_temp);
-                fprintf(screen, "potential_file_name_list[%d] = %s", x, potential_file_name_list[x]);
+                fprintf(screen, "potential_file_name_list[%d] = %s", x, potential_file_name_list[x].c_str());
             }
         }
         MPI_Bcast(&potential_file_name_list[0],potential_file_name_list.size()*sizeof(decltype(potential_file_name_list)::value_type),MPI_BYTE,0,world);
