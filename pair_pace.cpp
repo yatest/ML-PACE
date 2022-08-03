@@ -111,12 +111,12 @@ PairPACE::~PairPACE() {
     delete[] elements;
 
     delete[] potential_file_name;
-    //std::vector<string>::iterator itp;
-    //for (itp = potential_file_name_list.begin(); itp != potential_file_name_list.end(); ++itp){
-    //    delete *itp;
-    //}
-    std::vector<string>().swap(potential_file_name_list);
-    //itp.std::vector<string>::iterator::~iterator();
+    std::vector<char *>::iterator itp;
+    for (itp = potential_file_name_list.begin(); itp != potential_file_name_list.end(); ++itp){
+       delete *itp;
+    }
+    std::vector<char *>().swap(potential_file_name_list);
+    itp.std::vector<char *>::iterator::~iterator();
     std::vector<int>().swap(temps_list);
 
     delete basis_set;
@@ -499,14 +499,14 @@ void PairPACE::coeff(int narg, char **arg) {
                 if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
                 auto line_token = ValueTokenizer(line);
                 temps_list.push_back(line_token.next_int());
-                potential_file_name_list.push_back(line_token.next_string());
+                potential_file_name_list.push_back(line_token.next_string().c_str());
                 fprintf(screen, "temp[%d] = %d\n", nbasis, temps_list[nbasis]);
-                fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis].c_str());
+                fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis]);
                 ++nbasis;
             }
             if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
             for (int x = 0; x < nbasis; x++) {
-                fprintf(screen, "%s", potential_file_name_list[x].c_str());
+                fprintf(screen, "%s", potential_file_name_list[x]);
                 fprintf(screen, "%d", temps_list[x]);
             }
         }
@@ -517,11 +517,17 @@ void PairPACE::coeff(int narg, char **arg) {
             potential_file_name_list.resize(nbasis);
         }
         MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
-        MPI_Bcast(&potential_file_name_list[0],potential_file_name_list.size()*sizeof(decltype(potential_file_name_list)::value_type),MPI_BYTE,0,world);
+        int pot_file_len;
+        for (int i = 0; i < nbasis; i++) {
+            pot_file_len = strlen(potential_file_name_list[i])+1;
+            MPI_Bcast(&pot_file_len,1,MPI_INT,0,world);
+            MPI_Bcast(&potential_file_name_list[i],pot_file_len,MPI_BYTE,0,world);
+        }
+
         fprintf(screen, "I am running on proc %d", comm->me);
         if (comm->me != 0) {
             fprintf(screen, "temps_list[0] = %d", temps_list[0]);
-            fprintf(screen, "potential_file_name_list[0] = %s", potential_file_name_list[0].c_str());
+            fprintf(screen, "potential_file_name_list[0] = %s", potential_file_name_list[0]);
         }
 
         // TWY: load all potential files if interpolating
@@ -619,8 +625,8 @@ void PairPACE::coeff(int narg, char **arg) {
         ace_list.reserve(nbasis);
         for (int x = 0; x < nbasis; x++) {
             if (comm->me == 0) {
-                if (screen) fprintf(screen, "Loading %s\n", potential_file_name_list[x].c_str());
-                if (logfile) fprintf(logfile, "Loading %s\n", potential_file_name_list[x].c_str());
+                if (screen) fprintf(screen, "Loading %s\n", potential_file_name_list[x]);
+                if (logfile) fprintf(logfile, "Loading %s\n", potential_file_name_list[x]);
             }
             try {
                 basis_set_list[x]->load(potential_file_name_list[x]);
@@ -669,7 +675,7 @@ void PairPACE::coeff(int narg, char **arg) {
                 } else {
                     char error_msg[1024];
                     snprintf(error_msg, 1024, "Element %s is not supported by ACE-potential from file %s", elemname,
-                        potential_file_name_list[x].c_str());
+                        potential_file_name_list[x]);
                     error->all(FLERR, error_msg);
                 }
             }
