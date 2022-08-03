@@ -532,7 +532,7 @@ void PairPACE::coeff(int narg, char **arg) {
             }
             MPI_Bcast(const_cast<char*>(pot_file_temp.data()), pot_file_len, MPI_CHAR, 0, world);
             if (comm->me != 0) {
-                fprintf(screen, "decltype(pot_file_temp) = %s", decltype(pot_file_temp));
+                fprintf(screen, "typeid(pot_file_temp).name() = %s", typeid(pot_file_temp).name());
                 fprintf(screen, "pot_file_temp = %s\n", pot_file_temp.c_str());
                 potential_file_name_list[x] = pot_file_temp;
                 fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0].c_str());
