@@ -536,6 +536,7 @@ void PairPACE::coeff(int narg, char **arg) {
                 fprintf(screen, "pot_file_temp = %s\n", pot_file_temp.c_str());
                 // potential_file_name_list[x] = pot_file_temp;
                 potential_file_name_list.emplace_back(pot_file_temp);
+                pot_file_temp = "blahblahblah";
                 fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0].c_str());
                 fprintf(screen, "potential_file_name_list[%d] = %s\n", x, potential_file_name_list[x].c_str());
             }
@@ -721,8 +722,8 @@ void PairPACE::coeff(int narg, char **arg) {
 
 
             ace_list[x]->set_basis(*basis_set_list[x]);
-            fprintf(screen,"crad[0] = %f", basis_set_list[x]->radial_functions->crad(0, 0, 0, 0, 0));
-            fprintf(screen,"get_all_coeffs[0] = %f", basis_set_list[x]->get_all_coeffs()[0]);
+            fprintf(screen,"proc %d crad[0] = %f", comm->me, basis_set_list[x]->radial_functions->crad(0, 0, 0, 0, 0));
+            fprintf(screen,"proc %d get_all_coeffs[0] = %f", comm->me, basis_set_list[x]->get_all_coeffs()[0]);
         }
     }
 }
