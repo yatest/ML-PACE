@@ -517,7 +517,7 @@ void PairPACE::coeff(int narg, char **arg) {
         }
         MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
         
-        string pot_file_temp;
+        std::string pot_file_temp;
         for (int x = 0; x < nbasis; x++) {
             if (comm->me == 0) pot_file_temp = potential_file_name_list[x];
             MPI_Bcast(pot_file_temp.c_str(), pot_file_temp.size() + 1, MPI_CHAR, 0, world);
