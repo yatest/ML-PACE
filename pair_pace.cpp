@@ -539,8 +539,10 @@ void PairPACE::coeff(int narg, char **arg) {
         }
         fprintf(screen, "I am running on proc %d\n", comm->me);
         if (comm->me != 0) {
-            fprintf(screen, "temps_list[0] = %d\n", temps_list[0]);
-            fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0].c_str());
+            for (int x = 0; x < nbasis; x++) {
+                fprintf(screen, "temps_list[%d] = %d\n", x, temps_list[x]);
+                fprintf(screen, "potential_file_name_list[%d] = %s\n", x, potential_file_name_list[x].c_str());
+            }
         }
 
         // TWY: load all potential files if interpolating
