@@ -33,7 +33,6 @@ Copyright 2021 Yury Lysogorskiy^1, Cas van der Oord^2, Anton Bochkarev^1,
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-//#include <fstream>
 #include "potential_file_reader.h"
 #include "tokenizer.h"
 #include "pair_pace.h"
@@ -484,30 +483,34 @@ void PairPACE::coeff(int narg, char **arg) {
             //std::ifstream infile;
             //infile.open(potential_file_name);
             fprintf(screen, "potential_file_name = %s\n", potential_file_name);
-            PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
-            //if (!infile.is_open())
-            //    throw invalid_argument("Could not open file " + filename);
-            //while(getline(infile, line)){
-                //read number of files and names
-            //    potential_file_name_list.push_back(const_cast<char *>(line.c_str()));
-            //    ++nbasis;
-            int nwords;
-            char *line;
-            while ((line = reader.next_line())) {
-                fprintf(screen, "line = %s", line);
-                nwords = utils::count_words(line);
-                if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
-                auto line_token = ValueTokenizer(line);
-                temps_list.push_back(line_token.next_int());
-                potential_file_name_list.push_back(line_token.next_string());
-                fprintf(screen, "temp[%d] = %d\n", nbasis, temps_list[nbasis]);
-                fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis].c_str());
-                ++nbasis;
-            }
-            if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
-            for (int x = 0; x < nbasis; x++) {
-                fprintf(screen, "%s\n", potential_file_name_list[x].c_str());
-                fprintf(screen, "%d\n", temps_list[x]);
+            try {
+                PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
+                //if (!infile.is_open())
+                //    throw invalid_argument("Could not open file " + filename);
+                //while(getline(infile, line)){
+                    //read number of files and names
+                //    potential_file_name_list.push_back(const_cast<char *>(line.c_str()));
+                //    ++nbasis;
+                int nwords;
+                char *line;
+                while ((line = reader.next_line())) {
+                    fprintf(screen, "line = %s", line);
+                    nwords = utils::count_words(line);
+                    if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
+                    auto line_token = ValueTokenizer(line);
+                    temps_list.push_back(line_token.next_int());
+                    potential_file_name_list.push_back(line_token.next_string());
+                    fprintf(screen, "temp[%d] = %d\n", nbasis, temps_list[nbasis]);
+                    fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis].c_str());
+                    ++nbasis;
+                }
+                if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
+                for (int x = 0; x < nbasis; x++) {
+                    fprintf(screen, "%s\n", potential_file_name_list[x].c_str());
+                    fprintf(screen, "%d\n", temps_list[x]);
+                }
+            } catch (std::exception &e) {
+                error->one(FLERR,e.what());
             }
         }
 
