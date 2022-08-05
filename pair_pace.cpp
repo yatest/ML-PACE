@@ -33,7 +33,6 @@ Copyright 2021 Yury Lysogorskiy^1, Cas van der Oord^2, Anton Bochkarev^1,
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-//#include <fstream>
 #include "potential_file_reader.h"
 #include "tokenizer.h"
 #include "pair_pace.h"
