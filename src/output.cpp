@@ -116,6 +116,7 @@ Output::~Output()
 void Output::init()
 {
   thermo->init();
+  fprintf(screen, "thermo init finished");
   if (var_thermo) {
     ivar_thermo = input->variable->find(var_thermo);
     if (ivar_thermo < 0)
@@ -123,7 +124,7 @@ void Output::init()
     if (!input->variable->equalstyle(ivar_thermo))
       error->all(FLERR,"Variable for thermo every is invalid style");
   }
-
+  fprintf(screen, "output->init checkpoint 1");
   for (int i = 0; i < ndump; i++) dump[i]->init();
   for (int i = 0; i < ndump; i++)
     if (every_dump[i] == 0) {
@@ -133,7 +134,7 @@ void Output::init()
       if (!input->variable->equalstyle(ivar_dump[i]))
         error->all(FLERR,"Variable for dump every is invalid style");
     }
-
+  fprintf(screen, "output->init checkpoint 2");
   if (restart_flag_single && restart_every_single == 0) {
     ivar_restart_single = input->variable->find(var_restart_single);
     if (ivar_restart_single < 0)
@@ -141,6 +142,7 @@ void Output::init()
     if (!input->variable->equalstyle(ivar_restart_single))
       error->all(FLERR,"Variable for restart is invalid style");
   }
+  fprintf(screen, "output->init checkpoint 3");
   if (restart_flag_double && restart_every_double == 0) {
     ivar_restart_double = input->variable->find(var_restart_double);
     if (ivar_restart_double < 0)

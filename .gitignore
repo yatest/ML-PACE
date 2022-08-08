@@ -9,3 +9,6 @@
 !*/src/ML-PACE/pair_pace.h
 !*/src/atom.h
 !*/src/EXTRA-FIX/fix_ttm_mod.cpp
+!*/src/modify.cpp
+!*/src/output.cpp
+!*/src/thermo.cpp
