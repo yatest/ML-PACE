@@ -187,6 +187,13 @@ class Atom : protected Pointers {
   int dpd_flag, edpd_flag, tdpd_flag;
   int mesont_flag;
 
+  // Use average electronic temperature to alter ACE forces
+  // Currently only implemented for TTM, but in theory could 
+  // read T_e_avg from average temperature of ions in system
+  
+  int Te_flag = 0;
+  double T_e_avg;
+
   // SPIN package
 
   int sp_flag;

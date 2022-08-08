@@ -93,7 +93,7 @@ namespace LAMMPS_NS {
         int nelements;                // # of unique elements
         char **elements;              // names of unique elements
 
-        double T_e_avg;               // average electronic temperature
+        double T_e_in;                // input electronic temperature
 
         int *map;                     // mapping from atom types to elements
         int *jlist_local;

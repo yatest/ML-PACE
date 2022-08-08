@@ -87,7 +87,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 8) error->all(FLERR,"Illegal fix ttm/mod command");
 
   vector_flag = 1;
-  size_vector = 3;
+  size_vector = 2;
   global_freq = 1;
   extvector = 1;
   nevery = 1;
@@ -217,6 +217,17 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   // if specified, read initial electron temperatures from file
 
   if (infile) read_electron_temperatures(infile);
+
+  // set initial T_e_avg
+  if (Te_flag) {
+    T_e_avg = 0.0;
+    for (int ix = 0; ix < nxgrid; ix++)
+      for (int iy = 0; iy < nygrid; iy++)
+        for (int iz = 0; iz < nzgrid; iz++) {
+          T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
+        }
+    fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", T_e_avg);
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1046,6 +1057,20 @@ void FixTTMMod::end_of_step()
 
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
+
+  // TODO: calculate T_e_avg here so that it is calculated at the end of every step
+  // and can then be read by PACE when calculating the forces on the next step
+  // Need T_e_avg to be a variable that can be accessed by PACE module
+  // Maybe also want to use a flag to only calculate if needed
+  if (Te_flag) {
+    T_e_avg = 0.0;
+    for (int ix = 0; ix < nxgrid; ix++)
+      for (int iy = 0; iy < nygrid; iy++)
+        for (int iz = 0; iz < nzgrid; iz++) {
+          T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
+        }
+    fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", T_e_avg);
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -1076,7 +1101,6 @@ double FixTTMMod::compute_vector(int n)
 {
   double e_energy = 0.0;
   double transfer_energy = 0.0;
-  double T_e_avg = 0.0;
 
   double dx = domain->xprd/nxgrid;
   double dy = domain->yprd/nygrid;
@@ -1089,12 +1113,10 @@ double FixTTMMod::compute_vector(int n)
         e_energy += el_sp_heat_integral(T_electron[ix][iy][iz])*del_vol;
         transfer_energy +=
           net_energy_transfer_all[ix][iy][iz]*update->dt;
-        T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
       }
 
   if (n == 0) return e_energy;
   if (n == 1) return transfer_energy;
-  if (n == 2) return T_e_avg;
   return 0.0;
 }
 
@@ -1214,3 +1236,4 @@ int FixTTMMod::size_restart(int /*nlocal*/)
 {
   return 4;
 }
+

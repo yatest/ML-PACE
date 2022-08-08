@@ -7,3 +7,5 @@
 # if the files to be tracked are in subdirectories
 !*/src/ML-PACE/pair_pace.cpp
 !*/src/ML-PACE/pair_pace.h
+!*/src/atom.h
+!*/src/EXTRA-FIX/fix_ttm_mod.cpp
