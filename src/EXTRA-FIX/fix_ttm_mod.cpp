@@ -219,14 +219,14 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   if (infile) read_electron_temperatures(infile);
 
   // set initial T_e_avg
-  if (Te_flag) {
-    T_e_avg = 0.0;
+  if (atom->Te_flag) {
+    atom->T_e_avg = 0.0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
         for (int iz = 0; iz < nzgrid; iz++) {
-          T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
+          atom->T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
         }
-    fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", T_e_avg);
+    fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", atom->T_e_avg);
   }
 }
 
@@ -1062,14 +1062,14 @@ void FixTTMMod::end_of_step()
   // and can then be read by PACE when calculating the forces on the next step
   // Need T_e_avg to be a variable that can be accessed by PACE module
   // Maybe also want to use a flag to only calculate if needed
-  if (Te_flag) {
-    T_e_avg = 0.0;
+  if (atom->Te_flag) {
+    atom->T_e_avg = 0.0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
         for (int iz = 0; iz < nzgrid; iz++) {
-          T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
+          atom->T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
         }
-    fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", T_e_avg);
+    fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", atom->T_e_avg);
   }
 }
 

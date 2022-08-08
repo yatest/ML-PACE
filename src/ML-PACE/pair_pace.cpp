@@ -262,15 +262,15 @@ void PairPACE::compute(int eflag, int vflag) {
 
             if (interpolate) {
                 // if not using T_e_avg then use T_e input to pace command
-                if (!Te_flag) T_e_avg = T_e_in;
-                fprintf(screen, "pair_pace T_e_avg = %f\n", T_e_avg);
-                if (T_e_avg != 0.0) {
+                if (!atom->Te_flag) atom->T_e_avg = T_e_in;
+                fprintf(screen, "pair_pace T_e_avg = %f\n", atom->T_e_avg);
+                if (atom->T_e_avg != 0.0) {
                     for (k = 0; k < nbasis; k++) {
-                        if (temps_list[k] > T_e_avg) {
+                        if (temps_list[k] > atom->T_e_avg) {
                             if (k == 0) error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
                             T_u = k;
                             T_l = k-1;
-                            a = (temps_list[T_u] - T_e_avg) / (temps_list[T_u] - temps_list[T_l]);
+                            a = (temps_list[T_u] - atom->T_e_avg) / (temps_list[T_u] - temps_list[T_l]);
                             fij[0] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 0) +
                                 (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 0));
                             fij[1] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 1) +
@@ -356,7 +356,7 @@ void PairPACE::settings(int narg, char **arg) {
     recursive = true; // default evaluator style: RECURSIVE
     if (narg > 2) {
         // since T_e is given explicitly we will not use an average T_e from TTM (or otherwise)
-        Te_flag = 0;
+        atom->Te_flag = 0;
         if (stoi(arg[2]) > 0) {
             T_e_in = stoi(arg[2]);
             if (strcmp(arg[0], PRODUCT_KEYWORD) == 0 && strcmp(arg[1], INTERP_KEYWORD) == 0) {
@@ -384,7 +384,7 @@ void PairPACE::settings(int narg, char **arg) {
     } else if (narg > 1) {
         if (strcmp(arg[0], INTERP_KEYWORD) == 0) {
             // since T_e is given explicitly we will not use an average T_e from TTM (or otherwise)
-            Te_flag = 0;
+            atom->Te_flag = 0;
             interpolate = true;
             if (stoi(arg[1]) > 0) {
                 T_e_in = stoi(arg[1]);
@@ -398,7 +398,7 @@ void PairPACE::settings(int narg, char **arg) {
             }
         } else if (strcmp(arg[1], INTERP_KEYWORD) == 0) {
             // since no T_e is given explicitly we will use an average T_e from TTM (or otherwise)
-            Te_flag = 1;
+            atom->Te_flag = 1;
             interpolate = true;
             if (strcmp(arg[0], PRODUCT_KEYWORD) == 0) {
                 recursive = false;
