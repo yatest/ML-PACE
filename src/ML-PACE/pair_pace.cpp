@@ -425,6 +425,8 @@ void PairPACE::settings(int narg, char **arg) {
               recursive = false;
           } else if (strcmp(arg[0], RECURSIVE_KEYWORD) == 0) {
               recursive = true;
+          } else if (strcmp(arg[0], INTERP_KEYWORD) == 0) {
+              interpolate = true;
           } else {
               error->all(FLERR,
                          "Illegal pair_style command. Correct form:\n\tpair_style pace\nor\n\tpair_style pace ");
