@@ -107,23 +107,39 @@ void Verlet::setup(int flag)
   // setup domain, communication and neighboring
   // acquire ghosts
   // build neighbor lists
-
+  fprintf(screen, "Verlet checkpoint 0");
   atom->setup();
+  fprintf(screen, "Verlet checkpoint 0.1");
   modify->setup_pre_exchange();
+  fprintf(screen, "Verlet checkpoint 0.2");
   if (triclinic) domain->x2lamda(atom->nlocal);
+  fprintf(screen, "Verlet checkpoint 0.3");
   domain->pbc();
+  fprintf(screen, "Verlet checkpoint 0.4");
   domain->reset_box();
+  fprintf(screen, "Verlet checkpoint 0.5");
   comm->setup();
+  fprintf(screen, "Verlet checkpoint 0.6");
   if (neighbor->style) neighbor->setup_bins();
+  fprintf(screen, "Verlet checkpoint 0.7");
   comm->exchange();
+  fprintf(screen, "Verlet checkpoint 0.8");
   if (atom->sortfreq > 0) atom->sort();
+  fprintf(screen, "Verlet checkpoint 0.9");
   comm->borders();
+  fprintf(screen, "Verlet checkpoint 0.91");
   if (triclinic) domain->lamda2x(atom->nlocal+atom->nghost);
+  fprintf(screen, "Verlet checkpoint 0.92");
   domain->image_check();
+  fprintf(screen, "Verlet checkpoint 0.93");
   domain->box_too_small_check();
+  fprintf(screen, "Verlet checkpoint 0.94");
   modify->setup_pre_neighbor();
+  fprintf(screen, "Verlet checkpoint 0.95");
   neighbor->build(1);
+  fprintf(screen, "Verlet checkpoint 0.96");
   modify->setup_post_neighbor();
+  fprintf(screen, "Verlet checkpoint 0.97");
   neighbor->ncalls = 0;
   fprintf(screen, "Verlet checkpoint 1");
   // compute all forces
