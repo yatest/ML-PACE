@@ -12,3 +12,4 @@
 !*/src/modify.cpp
 !*/src/output.cpp
 !*/src/thermo.cpp
+!*/src/verlet.cpp

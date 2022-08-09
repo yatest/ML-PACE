@@ -213,7 +213,6 @@ void Thermo::init()
 
   // add Volume field if volume changes and not style = custom
   // this check must come after domain init, so box_change is set
-  fprintf(screen, "thermo->init checkpoint 1");
   nfield = nfield_initial;
   if (domain->box_change && strcmp(style,"custom") != 0)
     addfield("Volume",&Thermo::compute_vol,FLOAT);
@@ -227,7 +226,6 @@ void Thermo::init()
   if (format_line_user) {
     format_line = new ValueTokenizer(format_line_user);
   }
-  fprintf(screen, "thermo->init checkpoint 2");
   const char *ptr = nullptr;
   std::string format_line_user_def;
   for (i = 0; i < nfield; i++) {
@@ -262,7 +260,6 @@ void Thermo::init()
     else sprintf(&format[i][n],"%-8s = %s ",keyword[i],ptr);
   }
   strcat(format[nfield-1],"\n");
-  fprintf(screen, "thermo->init checkpoint 3");
   delete format_line;
 
   // find current ptr for each Compute ID
@@ -273,7 +270,6 @@ void Thermo::init()
     if (icompute < 0) error->all(FLERR,"Could not find thermo compute ID");
     computes[i] = modify->compute[icompute];
   }
-  fprintf(screen, "thermo->init checkpoint 4");
   // find current ptr for each Fix ID
   // check that fix frequency is acceptable with thermo output frequency
 
@@ -285,7 +281,6 @@ void Thermo::init()
     if (output->thermo_every % fixes[i]->global_freq)
       error->all(FLERR,"Thermo and fix not computed at compatible times");
   }
-  fprintf(screen, "thermo->init checkpoint 5");
   // find current ptr for each Variable ID
 
   int ivariable;
@@ -295,7 +290,6 @@ void Thermo::init()
       error->all(FLERR,"Could not find thermo variable name");
     variables[i] = ivariable;
   }
-  fprintf(screen, "thermo->init checkpoint 6");
   // set ptrs to keyword-specific Compute objects
 
   if (index_temp >= 0) temperature = computes[index_temp];

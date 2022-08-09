@@ -125,24 +125,24 @@ void Verlet::setup(int flag)
   neighbor->build(1);
   modify->setup_post_neighbor();
   neighbor->ncalls = 0;
-
+  fprintf(screen, "Verlet checkpoint 1");
   // compute all forces
 
   force->setup();
   ev_set(update->ntimestep);
   force_clear();
   modify->setup_pre_force(vflag);
-
+  fprintf(screen, "Verlet checkpoint 2");
   if (pair_compute_flag) force->pair->compute(eflag,vflag);
   else if (force->pair) force->pair->compute_dummy(eflag,vflag);
-
+  fprintf(screen, "Verlet checkpoint 3");
   if (atom->molecular != Atom::ATOMIC) {
     if (force->bond) force->bond->compute(eflag,vflag);
     if (force->angle) force->angle->compute(eflag,vflag);
     if (force->dihedral) force->dihedral->compute(eflag,vflag);
     if (force->improper) force->improper->compute(eflag,vflag);
   }
-
+  fprintf(screen, "Verlet checkpoint 4");
   if (force->kspace) {
     force->kspace->setup();
     if (kspace_compute_flag) force->kspace->compute(eflag,vflag);
@@ -155,6 +155,7 @@ void Verlet::setup(int flag)
   modify->setup(vflag);
   output->setup(flag);
   update->setupflag = 0;
+  fprintf(screen, "Verlet checkpoint 5");
 }
 
 /* ----------------------------------------------------------------------
