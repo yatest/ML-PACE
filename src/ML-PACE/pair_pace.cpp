@@ -210,6 +210,9 @@ void PairPACE::compute(int eflag, int vflag) {
         for (k = 0; k < nbasis; k++){
             ace_list[k]->resize_neighbours_cache(max_jnum);   
         }
+        // if not using T_e_avg then use T_e input to pace command
+        if (!atom->Te_flag) atom->T_e_avg = T_e_in;
+        if (comm->me == 0) fprintf(screen,"pair_pace T_e_avg = %f",atom->T_e_avg);
     }
     //loop over atoms
     for (ii = 0; ii < list->inum; ii++) {
@@ -251,7 +254,7 @@ void PairPACE::compute(int eflag, int vflag) {
             }
         }
         // 'compute_atom' will update the `ace->e_atom` and `ace->neighbours_forces(jj, alpha)` arrays
-
+        if (ii = 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 1\n",comm->me);
         for (jj = 0; jj < jnum; jj++) {
             j = jlist[jj];
             const int jtype = type[j];
@@ -261,8 +264,6 @@ void PairPACE::compute(int eflag, int vflag) {
             delz = x[j][2] - ztmp;
 
             if (interpolate) {
-                // if not using T_e_avg then use T_e input to pace command
-                if (!atom->Te_flag) atom->T_e_avg = T_e_in;
                 if (atom->T_e_avg != 0.0) {
                     for (k = 0; k < nbasis; k++) {
                         if (temps_list[k] > atom->T_e_avg) {
@@ -304,6 +305,7 @@ void PairPACE::compute(int eflag, int vflag) {
                              fij[0], fij[1], fij[2],
                              -delx, -dely, -delz);
         }
+        if (ii = 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 2\n",comm->me);
         // tally energy contribution
         if (eflag) {
             // evdwl = energy of atom I
@@ -314,6 +316,7 @@ void PairPACE::compute(int eflag, int vflag) {
             }
             ev_tally_full(i, 2.0 * evdwl, 0.0, 0.0, 0.0, 0.0, 0.0);
         }            
+        if (ii = 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 3\n",comm->me);
     }
 
     if (vflag_fdotr) virial_fdotr_compute();
