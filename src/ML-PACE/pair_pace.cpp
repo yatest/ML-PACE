@@ -424,6 +424,8 @@ void PairPACE::settings(int narg, char **arg) {
               recursive = true;
           } else if (strcmp(arg[0], INTERP_KEYWORD) == 0) {
               interpolate = true;
+              atom->Te_flag = 1;
+              MPI_Bcast(&atom->Te_flag, 1, MPI_INT, 0, world);
           } else {
               error->all(FLERR,
                          "Illegal pair_style command. Correct form:\n\tpair_style pace\nor\n\tpair_style pace ");
