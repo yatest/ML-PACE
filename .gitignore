@@ -13,3 +13,4 @@
 !*/src/output.cpp
 !*/src/thermo.cpp
 !*/src/verlet.cpp
+!*/src/domain.cpp
