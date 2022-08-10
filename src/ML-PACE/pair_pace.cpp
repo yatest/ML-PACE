@@ -149,18 +149,14 @@ void PairPACE::compute(int eflag, int vflag) {
     double delx, dely, delz, evdwl, a;
     double fij[3];
     int *ilist, *jlist, *numneigh, **firstneigh;
-    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 1\n",comm->me);
     ev_init(eflag, vflag);
     // downwards modified by YL
-    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 2\n",comm->me);
     double **x = atom->x;
     double **f = atom->f;
     tagint *tag = atom->tag;
     int *type = atom->type;
-    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 3\n",comm->me);
     // number of atoms in cell
     int nlocal = atom->nlocal;
-    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 4\n",comm->me);
     int newton_pair = force->newton_pair;
 
     // number of atoms including ghost atoms
@@ -177,7 +173,6 @@ void PairPACE::compute(int eflag, int vflag) {
 
     // the pointer to the list of neighbors of "i"
     firstneigh = list->firstneigh;
-    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 5\n",comm->me);
     if (inum != nlocal) {
         char str[128];
         snprintf(str, 128, "inum: %d nlocal: %d are different", inum, nlocal);
@@ -203,25 +198,17 @@ void PairPACE::compute(int eflag, int vflag) {
         if (jnum > max_jnum)
             max_jnum = jnum;
     }
-    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 6\n",comm->me);
-    fprintf(screen, "Proc %d, atom->T_e_avg = %d\n",comm->me,atom->T_e_avg);
     if (!interpolate) {
         ace->resize_neighbours_cache(max_jnum);
     } else {
         for (k = 0; k < nbasis; k++){
-            fprintf(screen, "Proc %d, ace_list[%d]->resize_neighbours_cache\n",comm->me,k);
-            fprintf(screen, "Proc %d, T_e_in = %f\n",comm->me,T_e_in);
-            fprintf(screen, "Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag);
             ace_list[k]->resize_neighbours_cache(max_jnum);   
         }
         // if not using T_e_avg then use T_e input to pace command
         if (!atom->Te_flag) atom->T_e_avg = T_e_in;
-        fprintf(screen,"Proc %d, pair_pace T_e_avg = %f\n",comm->me,atom->T_e_avg);
-        fprintf(screen,"Proc %d, list->inum = %d\n",comm->me,list->inum);
     }
     //loop over atoms
     for (ii = 0; ii < list->inum; ii++) {
-        if (ii == 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 0\n",comm->me);
         i = list->ilist[ii];
         const int itype = type[i];
 
@@ -260,7 +247,6 @@ void PairPACE::compute(int eflag, int vflag) {
             }
         }
         // 'compute_atom' will update the `ace->e_atom` and `ace->neighbours_forces(jj, alpha)` arrays
-        if (ii == 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 1\n",comm->me);
         for (jj = 0; jj < jnum; jj++) {
             j = jlist[jj];
             const int jtype = type[j];
@@ -311,7 +297,6 @@ void PairPACE::compute(int eflag, int vflag) {
                              fij[0], fij[1], fij[2],
                              -delx, -dely, -delz);
         }
-        if (ii == 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 2\n",comm->me);
         // tally energy contribution
         if (eflag) {
             // evdwl = energy of atom I
@@ -322,7 +307,6 @@ void PairPACE::compute(int eflag, int vflag) {
             }
             ev_tally_full(i, 2.0 * evdwl, 0.0, 0.0, 0.0, 0.0, 0.0);
         }            
-        if (ii == 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 3\n",comm->me);
     }
 
     if (vflag_fdotr) virial_fdotr_compute();
