@@ -149,18 +149,18 @@ void PairPACE::compute(int eflag, int vflag) {
     double delx, dely, delz, evdwl, a;
     double fij[3];
     int *ilist, *jlist, *numneigh, **firstneigh;
-
+    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 1\n",comm->me);
     ev_init(eflag, vflag);
     // downwards modified by YL
-
+    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 2\n",comm->me);
     double **x = atom->x;
     double **f = atom->f;
     tagint *tag = atom->tag;
     int *type = atom->type;
-
+    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 3\n",comm->me);
     // number of atoms in cell
     int nlocal = atom->nlocal;
-
+    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 4\n",comm->me);
     int newton_pair = force->newton_pair;
 
     // number of atoms including ghost atoms
@@ -177,7 +177,7 @@ void PairPACE::compute(int eflag, int vflag) {
 
     // the pointer to the list of neighbors of "i"
     firstneigh = list->firstneigh;
-
+    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 5\n",comm->me);
     if (inum != nlocal) {
         char str[128];
         snprintf(str, 128, "inum: %d nlocal: %d are different", inum, nlocal);
@@ -203,7 +203,7 @@ void PairPACE::compute(int eflag, int vflag) {
         if (jnum > max_jnum)
             max_jnum = jnum;
     }
-
+    fprintf(screen, "Proc %d, pair_pace->compute pre loop checkpoint 6\n",comm->me);
     if (!interpolate) {
         ace->resize_neighbours_cache(max_jnum);
     } else {
@@ -216,6 +216,7 @@ void PairPACE::compute(int eflag, int vflag) {
     }
     //loop over atoms
     for (ii = 0; ii < list->inum; ii++) {
+        if (ii = 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 0\n",comm->me);
         i = list->ilist[ii];
         const int itype = type[i];
 
