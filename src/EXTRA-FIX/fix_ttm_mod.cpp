@@ -608,6 +608,28 @@ void FixTTMMod::read_parameters(const std::string &filename)
       error->one(FLERR,e.what());
     }
   }
+  MPI_Bcast(&esheat_0, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&esheat_1, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&esheat_2, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&esheat_3, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&esheat_4, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&C_limit, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&T_damp, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&electronic_density, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&el_th_diff, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&gamma_p, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&gamma_s, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&v_0, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&intensity, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&surface_l, 1, MPI_INT, 0, world);
+  MPI_Bcast(&surface_r, 1, MPI_INT, 0, world);
+  MPI_Bcast(&skin_layer, 1, MPI_INT, 0, world);
+  MPI_Bcast(&width, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&pres_factor, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&free_path, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&ionic_density, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&movsur, 1, MPI_INT, 0, world);
+  MPI_Bcast(&electron_temperature_min, 1, MPI_DOUBLE, 0, world);
 }
 
 /* -----------------------------------------------------------------------
@@ -990,9 +1012,9 @@ void FixTTMMod::end_of_step()
                 if (left_x == -1) left_x = nxgrid - 1;
                 if (left_y == -1) left_y = nygrid - 1;
                 if (left_z == -1) left_z = nzgrid - 1;
-                double skin_layer_d = double(skin_layer);
-                double ix_d = double(ix);
-                double surface_d = double(t_surface_l);
+                auto skin_layer_d = double(skin_layer);
+                auto ix_d = double(ix);
+                auto surface_d = double(t_surface_l);
                 mult_factor = 0.0;
                 if (duration < width) {
                   if (ix >= t_surface_l) mult_factor = (intensity/(dx*skin_layer_d))*exp((-1.0)*(ix_d - surface_d)/skin_layer_d);
@@ -1156,7 +1178,7 @@ void FixTTMMod::write_restart(FILE *fp)
 void FixTTMMod::restart(char *buf)
 {
   int n = 0;
-  double *rlist = (double *) buf;
+  auto rlist = (double *) buf;
 
   // check that restart grid size is same as current grid size
 
