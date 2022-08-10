@@ -961,7 +961,7 @@ void Domain::subbox_too_small_check(double thresh)
       if (delta*prd[2] < thresh) flag = 1;
     }
   }
-
+  fprintf(screen,"Proc %d, thresh (neighbor skin) = %f\n",comm->me,thresh);
   int flagall;
   MPI_Allreduce(&flag,&flagall,1,MPI_INT,MPI_SUM,world);
   if (flagall && comm->me == 0)
