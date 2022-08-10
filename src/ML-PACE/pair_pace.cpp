@@ -210,6 +210,8 @@ void PairPACE::compute(int eflag, int vflag) {
     } else {
         for (k = 0; k < nbasis; k++){
             fprintf(screen, "Proc %d, ace_list[%d]->resize_neighbours_cache\n",comm->me,k);
+            fprintf(screen, "Proc %d, T_e_in = %f\n",comm->me,T_e_in);
+            fprintf(screen, "Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag);
             ace_list[k]->resize_neighbours_cache(max_jnum);   
         }
         // if not using T_e_avg then use T_e input to pace command
@@ -362,6 +364,7 @@ void PairPACE::settings(int narg, char **arg) {
     if (narg > 2) {
         // since T_e is given explicitly we will not use an average T_e from TTM (or otherwise)
         atom->Te_flag = 0;
+        MPI_Bcast(&Te_flag, 1, MPI_INT, 0, world);
         if (stoi(arg[2]) > 0) {
             T_e_in = stoi(arg[2]);
             MPI_Bcast(&T_e_in, 1, MPI_DOUBLE, 0, world);
@@ -391,6 +394,7 @@ void PairPACE::settings(int narg, char **arg) {
         if (strcmp(arg[0], INTERP_KEYWORD) == 0) {
             // since T_e is given explicitly we will not use an average T_e from TTM (or otherwise)
             atom->Te_flag = 0;
+            MPI_Bcast(&Te_flag, 1, MPI_INT, 0, world);
             interpolate = true;
             if (stoi(arg[1]) > 0) {
                 T_e_in = stoi(arg[1]);
@@ -406,6 +410,7 @@ void PairPACE::settings(int narg, char **arg) {
         } else if (strcmp(arg[1], INTERP_KEYWORD) == 0) {
             // since no T_e is given explicitly we will use an average T_e from TTM (or otherwise)
             atom->Te_flag = 1;
+            MPI_Bcast(&Te_flag, 1, MPI_INT, 0, world);
             interpolate = true;
             if (strcmp(arg[0], PRODUCT_KEYWORD) == 0) {
                 recursive = false;
