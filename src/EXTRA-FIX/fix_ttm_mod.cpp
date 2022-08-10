@@ -630,6 +630,7 @@ void FixTTMMod::read_parameters(const std::string &filename)
   MPI_Bcast(&ionic_density, 1, MPI_DOUBLE, 0, world);
   MPI_Bcast(&movsur, 1, MPI_INT, 0, world);
   MPI_Bcast(&electron_temperature_min, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&surf_flag, 1, MPI_INT, 0, world);
 }
 
 /* -----------------------------------------------------------------------
@@ -675,28 +676,30 @@ void FixTTMMod::read_electron_ion(const std::string &filename, int file_len)
 // T_e = T_electron[0,0,0] so long as electron temperature is homogeneous
 void FixTTMMod::electron_ion(double T_e, int file_len)
 {
-  int T_u;
-  int T_l;
-  double a;
-  for (int i = 0; i < file_len; i++) {
-     if (T_el[i] > T_e) {
-       // if T_e < min(T_el), set g_ei to lowest value
-       if (i == 0) {
-         gamma_p = g_ei[0];
-	       break;
-       }
+  if (comm->me == 0) {
+    int T_u;
+    int T_l;
+    double a;
+    for (int i = 0; i < file_len; i++) {
+      if (T_el[i] > T_e) {
+        // if T_e < min(T_el), set g_ei to lowest value
+        if (i == 0) {
+          gamma_p = g_ei[0];
+          break;
+        }
 
-       T_u = i;
-       T_l = i-1;
-       a = (T_e - T_el[T_l]) / (T_el[T_u] - T_el[T_l]);
-       gamma_p = lerp(g_ei[T_l], g_ei[T_u], a);
+        T_u = i;
+        T_l = i-1;
+        a = (T_e - T_el[T_l]) / (T_el[T_u] - T_el[T_l]);
+        gamma_p = lerp(g_ei[T_l], g_ei[T_u], a);
 
-       break;
-     }
+        break;
+      }
+    }
+    // check if gamma_p was set correctly
+    if (gamma_p == -1) error->all(FLERR,"Fix ttm/mod temperature-dependent gamma_p not set");
   }
-  // check if gamma_p was set correctly
-  if (gamma_p == -1) error->all(FLERR,"Fix ttm/mod temperature-dependent gamma_p not set");
-
+  MPI_Bcast(&gamma_p, 1, MPI_DOUBLE, 0, world);
 }
 /* ----------------------------------------------------------------------
    read in initial electron temperatures from a user-specified file
