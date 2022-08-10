@@ -252,6 +252,7 @@ void Verlet::run(int n)
   int n_pre_reverse = modify->n_pre_reverse;
   int n_post_force = modify->n_post_force;
   int n_end_of_step = modify->n_end_of_step;
+  fprintf(screen,"Verlet run checkpoint 1");
 
   if (atom->sortfreq > 0) sortflag = 1;
   else sortflag = 0;
@@ -266,7 +267,7 @@ void Verlet::run(int n)
     ev_set(ntimestep);
 
     // initial time integration
-
+    fprintf(screen,"Verlet run checkpoint 2");
     timer->stamp();
     modify->initial_integrate(vflag);
     if (n_post_integrate) modify->post_integrate();
@@ -286,13 +287,16 @@ void Verlet::run(int n)
         modify->pre_exchange();
         timer->stamp(Timer::MODIFY);
       }
+      fprintf(screen,"Verlet run checkpoint 3");
       if (triclinic) domain->x2lamda(atom->nlocal);
       domain->pbc();
+      fprintf(screen,"Verlet run checkpoint 4");
       if (domain->box_change) {
         domain->reset_box();
         comm->setup();
         if (neighbor->style) neighbor->setup_bins();
       }
+      fprintf(screen,"Verlet run checkpoint 5");
       timer->stamp();
       comm->exchange();
       if (sortflag && ntimestep >= atom->nextsort) atom->sort();
@@ -303,6 +307,7 @@ void Verlet::run(int n)
         modify->pre_neighbor();
         timer->stamp(Timer::MODIFY);
       }
+      fprintf(screen,"Verlet run checkpoint 6");
       neighbor->build(1);
       timer->stamp(Timer::NEIGH);
       if (n_post_neighbor) {
@@ -315,7 +320,7 @@ void Verlet::run(int n)
     // important for pair to come before bonded contributions
     // since some bonded potentials tally pairwise energy/virial
     // and Pair:ev_tally() needs to be called before any tallying
-
+    fprintf(screen,"Verlet run checkpoint 7");
     force_clear();
 
     timer->stamp();
@@ -324,12 +329,12 @@ void Verlet::run(int n)
       modify->pre_force(vflag);
       timer->stamp(Timer::MODIFY);
     }
-
+    fprintf(screen,"Verlet run checkpoint 8");
     if (pair_compute_flag) {
       force->pair->compute(eflag,vflag);
       timer->stamp(Timer::PAIR);
-    }
-
+    } 
+    fprintf(screen,"Verlet run checkpoint 9");
     if (atom->molecular != Atom::ATOMIC) {
       if (force->bond) force->bond->compute(eflag,vflag);
       if (force->angle) force->angle->compute(eflag,vflag);
@@ -356,7 +361,7 @@ void Verlet::run(int n)
     }
 
     // force modifications, final time integration, diagnostics
-
+    fprintf(screen,"Verlet run checkpoint 10");
     if (n_post_force) modify->post_force(vflag);
     modify->final_integrate();
     if (n_end_of_step) modify->end_of_step();
@@ -369,6 +374,7 @@ void Verlet::run(int n)
       output->write(ntimestep);
       timer->stamp(Timer::OUTPUT);
     }
+    fprintf(screen,"Verlet run checkpoint 11");
   }
 }
 
