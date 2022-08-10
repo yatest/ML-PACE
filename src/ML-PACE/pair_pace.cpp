@@ -364,6 +364,7 @@ void PairPACE::settings(int narg, char **arg) {
         atom->Te_flag = 0;
         if (stoi(arg[2]) > 0) {
             T_e_in = stoi(arg[2]);
+            MPI_Bcast(&T_e_in, 1, MPI_DOUBLE, 0, world);
             if (strcmp(arg[0], PRODUCT_KEYWORD) == 0 && strcmp(arg[1], INTERP_KEYWORD) == 0) {
                 recursive = false;
                 interpolate = true;
@@ -393,6 +394,7 @@ void PairPACE::settings(int narg, char **arg) {
             interpolate = true;
             if (stoi(arg[1]) > 0) {
                 T_e_in = stoi(arg[1]);
+                MPI_Bcast(&T_e_in, 1, MPI_DOUBLE, 0, world);
             } else {
                 error->all(FLERR,
                             "Illegal pair_style command. Correct form:\n\tpair_style pace\nor\n\tpair_style pace ");
