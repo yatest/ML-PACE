@@ -221,7 +221,7 @@ void PairPACE::compute(int eflag, int vflag) {
     }
     //loop over atoms
     for (ii = 0; ii < list->inum; ii++) {
-        if (ii = 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 0\n",comm->me);
+        if (ii == 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 0\n",comm->me);
         i = list->ilist[ii];
         const int itype = type[i];
 
@@ -260,7 +260,7 @@ void PairPACE::compute(int eflag, int vflag) {
             }
         }
         // 'compute_atom' will update the `ace->e_atom` and `ace->neighbours_forces(jj, alpha)` arrays
-        if (ii = 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 1\n",comm->me);
+        if (ii == 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 1\n",comm->me);
         for (jj = 0; jj < jnum; jj++) {
             j = jlist[jj];
             const int jtype = type[j];
@@ -311,7 +311,7 @@ void PairPACE::compute(int eflag, int vflag) {
                              fij[0], fij[1], fij[2],
                              -delx, -dely, -delz);
         }
-        if (ii = 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 2\n",comm->me);
+        if (ii == 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 2\n",comm->me);
         // tally energy contribution
         if (eflag) {
             // evdwl = energy of atom I
@@ -322,7 +322,7 @@ void PairPACE::compute(int eflag, int vflag) {
             }
             ev_tally_full(i, 2.0 * evdwl, 0.0, 0.0, 0.0, 0.0, 0.0);
         }            
-        if (ii = 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 3\n",comm->me);
+        if (ii == 0) fprintf(screen, "Proc %d, pair_pace->compute checkpoint 3\n",comm->me);
     }
 
     if (vflag_fdotr) virial_fdotr_compute();
