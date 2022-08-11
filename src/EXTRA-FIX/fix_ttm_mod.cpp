@@ -1095,6 +1095,8 @@ void FixTTMMod::end_of_step()
           atom->T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
         }
     fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", atom->T_e_avg);
+    // might need to Bcast T_e_avg or even average it over all procs if
+    // this isn't all just done on proc 0.
   }
 }
 

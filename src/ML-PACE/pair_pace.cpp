@@ -158,7 +158,7 @@ void PairPACE::compute(int eflag, int vflag) {
     // number of atoms in cell
     int nlocal = atom->nlocal;
     int newton_pair = force->newton_pair;
-    fprintf(screen,"Proc %d, pair_pace checkpoint 1",comm->me);
+    fprintf(screen,"Proc %d, pair_pace checkpoint 1\n",comm->me);
 
     // number of atoms including ghost atoms
     int nall = nlocal + atom->nghost;
@@ -168,7 +168,7 @@ void PairPACE::compute(int eflag, int vflag) {
 
     // ilist: list of "i" atoms for which neighbor lists exist
     ilist = list->ilist;
-    fprintf(screen,"Proc %d, pair_pace checkpoint 2",comm->me);
+    fprintf(screen,"Proc %d, pair_pace checkpoint 2\n",comm->me);
     //numneigh: the length of each these neigbor list
     numneigh = list->numneigh;
 
@@ -179,7 +179,7 @@ void PairPACE::compute(int eflag, int vflag) {
         snprintf(str, 128, "inum: %d nlocal: %d are different", inum, nlocal);
         error->all(FLERR, str);
     }
-    fprintf(screen,"Proc %d, pair_pace checkpoint 3",comm->me);
+    fprintf(screen,"Proc %d, pair_pace checkpoint 3\n",comm->me);
     // Aidan Thompson told RD (26 July 2019) that practically always holds:
     // inum = nlocal
     // i = ilist(ii) < inum
@@ -199,13 +199,15 @@ void PairPACE::compute(int eflag, int vflag) {
         if (jnum > max_jnum)
             max_jnum = jnum;
     }
-    fprintf(screen,"Proc %d, pair_pace checkpoint 4",comm->me);
+    fprintf(screen,"Proc %d, pair_pace checkpoint 4\n",comm->me);
     if (!interpolate) {
         ace->resize_neighbours_cache(max_jnum);
     } else {
         for (k = 0; k < nbasis; k++){
             ace_list[k]->resize_neighbours_cache(max_jnum);   
         }
+        fprintf(screen,"Proc %d, pair_pace checkpoint 5\n",comm->me);
+        fprintf(screen,"Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag)
         // if not using T_e_avg then use T_e input to pace command
         if (!atom->Te_flag) atom->T_e_avg = T_e_in;
     }
