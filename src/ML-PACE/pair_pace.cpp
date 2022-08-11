@@ -203,6 +203,7 @@ void PairPACE::compute(int eflag, int vflag) {
     fprintf(screen,"Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag);
     if (!interpolate) {
         fprintf(screen,"Proc %d, max_jnum = %d\n",comm->me,max_jnum);
+        fprintf(screen,"Proc %d, ace->R_cache.get_dim(0) = %d\n",comm->me,ace->R_cache.get_dim(0));
         ace->resize_neighbours_cache(max_jnum);
     } else {
         for (k = 0; k < nbasis; k++){

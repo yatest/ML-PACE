@@ -150,11 +150,6 @@ class ACECTildeEvaluator : public ACEEvaluator {
 
 
     /**
-     * cache for \f$ R_{nl}(r)\f$
-     * shape:[max_jnum][nradbase][0..lmax]
-     */
-    Array3D<DOUBLE_TYPE> R_cache = Array3D<DOUBLE_TYPE>("R_cache");
-    /**
      * cache for derivatives of \f$ R_{nl}(r)\f$
      * shape:[max_jnum][nradbase][0..lmax]
      */
@@ -194,6 +189,12 @@ class ACECTildeEvaluator : public ACEEvaluator {
     void init(ACECTildeBasisSet *basis_set);
 
 public:
+
+    /**
+     * cache for \f$ R_{nl}(r)\f$
+     * shape:[max_jnum][nradbase][0..lmax]
+     */
+    Array3D<DOUBLE_TYPE> R_cache = Array3D<DOUBLE_TYPE>("R_cache");
 
     ACECTildeEvaluator() = default;
 
