@@ -209,7 +209,7 @@ void PairPACE::compute(int eflag, int vflag) {
         // if not using T_e_avg then use T_e input to pace command
         if (!atom->Te_flag) atom->T_e_avg = T_e_in;
     }
-    if (comm->me == 0) fprintf(screen,"pair_pace T_e_avg = %f",T_e_avg);
+    if (comm->me == 0) fprintf(screen,"pair_pace T_e_avg = %f",atom->T_e_avg);
     //loop over atoms
     for (ii = 0; ii < list->inum; ii++) {
         i = list->ilist[ii];
