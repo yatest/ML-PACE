@@ -207,7 +207,7 @@ void PairPACE::compute(int eflag, int vflag) {
             ace_list[k]->resize_neighbours_cache(max_jnum);   
         }
         fprintf(screen,"Proc %d, pair_pace checkpoint 5\n",comm->me);
-        fprintf(screen,"Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag)
+        fprintf(screen,"Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag);
         // if not using T_e_avg then use T_e input to pace command
         if (!atom->Te_flag) atom->T_e_avg = T_e_in;
     }
