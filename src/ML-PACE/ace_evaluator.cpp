@@ -94,7 +94,7 @@ void ACECTildeEvaluator::resize_neighbours_cache(int max_jnum) {
     if(basis_set== nullptr) {
         throw std::invalid_argument("ACECTildeEvaluator: basis set is not assigned");
     }
-    fprintf("R_cache.get_dim(0) = %d\n",R_cache.get_dim(0));
+    std::cout << "R_cache.get_dim(0) = " << R_cache.get_dim(0) << "\n";
     if (R_cache.get_dim(0) < max_jnum) {
 
         //TODO: implement grow
