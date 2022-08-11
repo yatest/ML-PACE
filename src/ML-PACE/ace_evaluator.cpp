@@ -72,6 +72,7 @@ void ACECTildeEvaluator::init(ACECTildeBasisSet *basis_set) {
 
     R_cache.init(1, basis_set->nradmax, basis_set->lmax + 1, "R_cache");
     R_cache.fill(0);
+    std::cout << "R_cache.get_dim(0) = " << R_cache.get_dim(0) << "\n";
 
     DR_cache.init(1, basis_set->nradmax, basis_set->lmax + 1, "DR_cache");
     DR_cache.fill(0);
