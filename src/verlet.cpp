@@ -133,22 +133,22 @@ void Verlet::setup(int flag)
   domain->image_check();
   fprintf(screen, "Verlet checkpoint 0.93");
   domain->box_too_small_check();
-  fprintf(screen, "Verlet checkpoint 0.94");
+  fprintf(screen, "Verlet checkpoint 0.94\n");
   modify->setup_pre_neighbor();
-  fprintf(screen, "Verlet checkpoint 0.95");
+  fprintf(screen, "Proc %d, Verlet checkpoint 0.95\n",comm->me);
   neighbor->build(1);
   fprintf(screen, "Verlet checkpoint 0.96");
   modify->setup_post_neighbor();
   fprintf(screen, "Verlet checkpoint 0.97");
   neighbor->ncalls = 0;
-  fprintf(screen, "Verlet checkpoint 1");
+  fprintf(screen, "Verlet checkpoint 1\n");
   // compute all forces
 
   force->setup();
   ev_set(update->ntimestep);
   force_clear();
   modify->setup_pre_force(vflag);
-  fprintf(screen, "Verlet checkpoint 2");
+  fprintf(screen, "Proc %d, Verlet checkpoint 2\n",comm->me);
   if (pair_compute_flag) force->pair->compute(eflag,vflag);
   else if (force->pair) force->pair->compute_dummy(eflag,vflag);
   fprintf(screen, "Verlet checkpoint 3");
