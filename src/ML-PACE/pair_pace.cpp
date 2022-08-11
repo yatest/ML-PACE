@@ -204,6 +204,7 @@ void PairPACE::compute(int eflag, int vflag) {
     if (!interpolate) {
         fprintf(screen,"Proc %d, max_jnum = %d\n",comm->me,max_jnum);
         fprintf(screen,"Proc %d, ace->R_cache.get_dim(0) = %d\n",comm->me,ace->R_cache.get_dim(0));
+        fprintf(screen,"Proc %d, ace->basis_set = %d\n",comm->me,ace->basis_set);
         ace->resize_neighbours_cache(max_jnum);
     } else {
         for (k = 0; k < nbasis; k++){
