@@ -137,11 +137,6 @@ class ACERecursiveEvaluator : public ACEEvaluator {
 
 
     /**
-     * cache for \f$ R_{nl}(r)\f$
-     * shape:[max_jnum][nradbase][0..lmax]
-     */
-    Array3D<DOUBLE_TYPE> R_cache = Array3D<DOUBLE_TYPE>("R_cache");
-    /**
      * cache for derivatives of \f$ R_{nl}(r)\f$
      * shape:[max_jnum][nradbase][0..lmax]
      */
@@ -196,6 +191,11 @@ class ACERecursiveEvaluator : public ACEEvaluator {
 
 public:
 
+    /**
+     * cache for \f$ R_{nl}(r)\f$
+     * shape:[max_jnum][nradbase][0..lmax]
+     */
+    Array3D<DOUBLE_TYPE> R_cache = Array3D<DOUBLE_TYPE>("R_cache");
 
     ACERecursiveEvaluator() = default;
 

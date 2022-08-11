@@ -9,6 +9,7 @@
 !*/src/ML-PACE/pair_pace.h
 !*/src/ML-PACE/ace_evaluator.cpp
 !*/src/ML-PACE/ace_evaluator.h
+!*/src/ML-PACE/ace_recursive.h
 !*/src/atom.h
 !*/src/EXTRA-FIX/fix_ttm_mod.cpp
 !*/src/modify.cpp
