@@ -200,14 +200,17 @@ void PairPACE::compute(int eflag, int vflag) {
             max_jnum = jnum;
     }
     fprintf(screen,"Proc %d, pair_pace checkpoint 4\n",comm->me);
+    fprintf(screen,"Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag);
     if (!interpolate) {
         ace->resize_neighbours_cache(max_jnum);
     } else {
         for (k = 0; k < nbasis; k++){
+            fprintf(screen,"Proc %d, k = %d\n",comm->me,k);
+            fprintf(screen,"Proc %d, nbasis = %d\n",comm->me,nbasis);
+            fprintf(screen,"Proc %d, max_jnum = %d\n",comm->me,max_jnum);
             ace_list[k]->resize_neighbours_cache(max_jnum);   
         }
         fprintf(screen,"Proc %d, pair_pace checkpoint 5\n",comm->me);
-        fprintf(screen,"Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag);
         // if not using T_e_avg then use T_e input to pace command
         if (!atom->Te_flag) atom->T_e_avg = T_e_in;
     }
