@@ -206,6 +206,7 @@ void PairPACE::compute(int eflag, int vflag) {
         fprintf(screen,"Proc %d, ace->R_cache.get_dim(0) = %d\n",comm->me,ace->R_cache.get_dim(0));
         fprintf(screen,"Proc %d, ace->basis_set->get_all_coeffs()[0] = %f\n",comm->me,ace->basis_set->get_all_coeffs()[0]);
         ace->resize_neighbours_cache(max_jnum);
+        fprintf(screen,"Proc %d, pair_pace checkpoint 5\n",comm->me);
     } else {
         for (k = 0; k < nbasis; k++){
             fprintf(screen,"Proc %d, k = %d\n",comm->me,k);
