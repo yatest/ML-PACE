@@ -683,6 +683,9 @@ void PairPACE::coeff(int narg, char **arg) {
         if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
 
         ace->set_basis(*basis_set);
+        fprintf(screen,"proc %d crad[0] = %f\n", comm->me, basis_set->radial_functions->crad(0, 0, 0, 0, 0));
+        fprintf(screen,"proc %d get_all_coeffs[0] = %f\n", comm->me, basis_set->get_all_coeffs()[0]);
+        fprintf(screen,"Proc %d, ace->basis_set->get_all_coeffs()[0] = %f\n",comm->me,ace->basis_set->get_all_coeffs()[0]);
     } else {
         // TWY: loop over all potential files
         //std::vector<ACERecursiveEvaluator *> ace_list;
