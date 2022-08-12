@@ -718,7 +718,7 @@ void ACERecursiveEvaluator::resize_neighbours_cache(int max_jnum) {
         throw std::invalid_argument("ACERecursiveEvaluator: basis set is not assigned");
     }
     if (R_cache.get_dim(0) < max_jnum) {
-        std::cout << "resize_neighbours_cache entered if statement\n"
+        std::cout << "resize_neighbours_cache entered if statement\n";
         //TODO: implement grow
         R_cache.resize(max_jnum, basis_set->nradmax, basis_set->lmax + 1);
         R_cache.fill(0);
@@ -739,7 +739,7 @@ void ACERecursiveEvaluator::resize_neighbours_cache(int max_jnum) {
         DCR_cache.init(max_jnum, "DCR_cache");
         DCR_cache.fill(0);
     }
-    std::cout << "resize_neighbours_cache end\n"
+    std::cout << "resize_neighbours_cache end\n";
 }
 
 
