@@ -209,6 +209,7 @@ void PairPACE::compute(int eflag, int vflag) {
         fprintf(screen,"Proc %d, pair_pace checkpoint 5\n",comm->me);
     } else {
         for (k = 0; k < nbasis; k++){
+            // if T_e_avg is homogeneous, can calculate T_u, T_l, and a here
             fprintf(screen,"Proc %d, k = %d\n",comm->me,k);
             fprintf(screen,"Proc %d, nbasis = %d\n",comm->me,nbasis);
             fprintf(screen,"Proc %d, max_jnum = %d\n",comm->me,max_jnum);
@@ -249,13 +250,32 @@ void PairPACE::compute(int eflag, int vflag) {
         // TWY: repeat for all potentials
         // Can we only repeat for the two potentials bounding T_e_avg?
         // Would it cause issues if the other potentials aren't kept updated?
-            for (k = 0; k < nbasis; k++) {
+            if (atom->T_e_avg != 0.0) {
+                for (k = 0; k < nbasis; k++) {
+                    if (temps_list[k] > atom->T_e_avg) {
+                        if (k == 0) error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
+                        T_u = k;
+                        T_l = k-1;
+                        a = (temps_list[T_u] - atom->T_e_avg) / (temps_list[T_u] - temps_list[T_l]);
+                        break;
+                    } else if (k == (nbasis-1)) {
+                        error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
+                    }
+                }
                 try {
-                    ace_list[k]->compute_atom(i, x, type, jnum, jlist);
+                    ace_list[T_u]->compute_atom(i, x, type, jnum, jlist);
                 } catch (exception &e) {
                     error->all(FLERR, e.what());
                     exit(EXIT_FAILURE);
                 }
+                try {
+                    ace_list[T_l]->compute_atom(i, x, type, jnum, jlist);
+                } catch (exception &e) {
+                    error->all(FLERR, e.what());
+                    exit(EXIT_FAILURE);
+                }
+            } else {
+                    error->all(FLERR, "T_e_avg has not been set (= 0.0) before calculating ACE forces");
             }
         }
         // 'compute_atom' will update the `ace->e_atom` and `ace->neighbours_forces(jj, alpha)` arrays
@@ -268,28 +288,12 @@ void PairPACE::compute(int eflag, int vflag) {
             delz = x[j][2] - ztmp;
 
             if (interpolate) {
-                if (atom->T_e_avg != 0.0) {
-                    for (k = 0; k < nbasis; k++) {
-                        if (temps_list[k] > atom->T_e_avg) {
-                            if (k == 0) error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
-                            T_u = k;
-                            T_l = k-1;
-                            a = (temps_list[T_u] - atom->T_e_avg) / (temps_list[T_u] - temps_list[T_l]);
-                            fij[0] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 0) +
-                                (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 0));
-                            fij[1] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 1) +
-                                (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 1));
-                            fij[2] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 2) +
-                                (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 2));
-                            break;
-                        } else if (k == (nbasis-1)) {
-                            error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
-                        }
-                    }
-                } else {
-                    error->all(FLERR, "T_e_avg has not been set (= 0.0) before calculating ACE forces");
-                }
-                
+                fij[0] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 0) +
+                    (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 0));
+                fij[1] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 1) +
+                    (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 1));
+                fij[2] = scale[itype][jtype] * (a*ace_list[T_l]->neighbours_forces(jj, 2) +
+                    (1.0-a)*ace_list[T_u]->neighbours_forces(jj, 2));
             } else {
                 fij[0] = scale[itype][jtype] * ace->neighbours_forces(jj, 0);
                 fij[1] = scale[itype][jtype] * ace->neighbours_forces(jj, 1);
