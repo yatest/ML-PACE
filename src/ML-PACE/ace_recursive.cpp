@@ -717,7 +717,7 @@ void ACERecursiveEvaluator::resize_neighbours_cache(int max_jnum) {
     if (basis_set == nullptr) {
         throw std::invalid_argument("ACERecursiveEvaluator: basis set is not assigned");
     }
-    if (R_cache.get_dim(0) < max_jnum) {
+    if (static_cast<int>(ace->R_cache.get_dim(0)) < max_jnum) {
         std::cout << "resize_neighbours_cache entered if statement\n";
         //TODO: implement grow
         R_cache.resize(max_jnum, basis_set->nradmax, basis_set->lmax + 1);
