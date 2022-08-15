@@ -265,7 +265,6 @@ void Modify::init()
   for (i = 0; i < nfix; i++) {
     if (fix[i]->time_integrate == 0) continue;
     groupbit = fix[i]->groupbit;
-    fprintf(screen, "Fix style = %s\n", fix[i]->style);
     for (j = 0; j < nlocal; j++)
       if (mask[j] & groupbit) flag[j]++;
   }

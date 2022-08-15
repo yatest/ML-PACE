@@ -107,58 +107,37 @@ void Verlet::setup(int flag)
   // setup domain, communication and neighboring
   // acquire ghosts
   // build neighbor lists
-  fprintf(screen, "Verlet checkpoint 0");
   atom->setup();
-  fprintf(screen, "Verlet checkpoint 0.1");
   modify->setup_pre_exchange();
-  fprintf(screen, "Verlet checkpoint 0.2");
   if (triclinic) domain->x2lamda(atom->nlocal);
-  fprintf(screen, "Verlet checkpoint 0.3");
   domain->pbc();
-  fprintf(screen, "Verlet checkpoint 0.4");
   domain->reset_box();
-  fprintf(screen, "Verlet checkpoint 0.5");
   comm->setup();
-  fprintf(screen, "Verlet checkpoint 0.6");
   if (neighbor->style) neighbor->setup_bins();
-  fprintf(screen, "Verlet checkpoint 0.7");
   comm->exchange();
-  fprintf(screen, "Verlet checkpoint 0.8");
   if (atom->sortfreq > 0) atom->sort();
-  fprintf(screen, "Verlet checkpoint 0.9");
   comm->borders();
-  fprintf(screen, "Verlet checkpoint 0.91");
   if (triclinic) domain->lamda2x(atom->nlocal+atom->nghost);
-  fprintf(screen, "Verlet checkpoint 0.92");
   domain->image_check();
-  fprintf(screen, "Verlet checkpoint 0.93");
   domain->box_too_small_check();
-  fprintf(screen, "Verlet checkpoint 0.94\n");
   modify->setup_pre_neighbor();
-  fprintf(screen, "Proc %d, Verlet checkpoint 0.95\n",comm->me);
   neighbor->build(1);
-  fprintf(screen, "Verlet checkpoint 0.96");
   modify->setup_post_neighbor();
-  fprintf(screen, "Verlet checkpoint 0.97");
   neighbor->ncalls = 0;
-  fprintf(screen, "Verlet checkpoint 1\n");
   // compute all forces
 
   force->setup();
   ev_set(update->ntimestep);
   force_clear();
   modify->setup_pre_force(vflag);
-  fprintf(screen, "Proc %d, Verlet checkpoint 2\n",comm->me);
   if (pair_compute_flag) force->pair->compute(eflag,vflag);
   else if (force->pair) force->pair->compute_dummy(eflag,vflag);
-  fprintf(screen, "Verlet checkpoint 3");
   if (atom->molecular != Atom::ATOMIC) {
     if (force->bond) force->bond->compute(eflag,vflag);
     if (force->angle) force->angle->compute(eflag,vflag);
     if (force->dihedral) force->dihedral->compute(eflag,vflag);
     if (force->improper) force->improper->compute(eflag,vflag);
   }
-  fprintf(screen, "Verlet checkpoint 4");
   if (force->kspace) {
     force->kspace->setup();
     if (kspace_compute_flag) force->kspace->compute(eflag,vflag);
@@ -171,7 +150,6 @@ void Verlet::setup(int flag)
   modify->setup(vflag);
   output->setup(flag);
   update->setupflag = 0;
-  fprintf(screen, "Verlet checkpoint 5");
 }
 
 /* ----------------------------------------------------------------------
@@ -252,7 +230,6 @@ void Verlet::run(int n)
   int n_pre_reverse = modify->n_pre_reverse;
   int n_post_force = modify->n_post_force;
   int n_end_of_step = modify->n_end_of_step;
-  //fprintf(screen,"Verlet run checkpoint 1\n");
 
   if (atom->sortfreq > 0) sortflag = 1;
   else sortflag = 0;
@@ -267,7 +244,6 @@ void Verlet::run(int n)
     ev_set(ntimestep);
 
     // initial time integration
-    //fprintf(screen,"Verlet run checkpoint 2\n");
     timer->stamp();
     modify->initial_integrate(vflag);
     if (n_post_integrate) modify->post_integrate();
@@ -287,16 +263,13 @@ void Verlet::run(int n)
         modify->pre_exchange();
         timer->stamp(Timer::MODIFY);
       }
-      //fprintf(screen,"Verlet run checkpoint 3\n");
       if (triclinic) domain->x2lamda(atom->nlocal);
       domain->pbc();
-      //fprintf(screen,"Verlet run checkpoint 4\n");
       if (domain->box_change) {
         domain->reset_box();
         comm->setup();
         if (neighbor->style) neighbor->setup_bins();
       }
-      //fprintf(screen,"Verlet run checkpoint 5\n");
       timer->stamp();
       comm->exchange();
       if (sortflag && ntimestep >= atom->nextsort) atom->sort();
@@ -307,7 +280,6 @@ void Verlet::run(int n)
         modify->pre_neighbor();
         timer->stamp(Timer::MODIFY);
       }
-      //fprintf(screen,"Verlet run checkpoint 6\n");
       neighbor->build(1);
       timer->stamp(Timer::NEIGH);
       if (n_post_neighbor) {
@@ -320,7 +292,6 @@ void Verlet::run(int n)
     // important for pair to come before bonded contributions
     // since some bonded potentials tally pairwise energy/virial
     // and Pair:ev_tally() needs to be called before any tallying
-    //fprintf(screen,"Verlet run checkpoint 7\n");
     force_clear();
 
     timer->stamp();
@@ -329,12 +300,10 @@ void Verlet::run(int n)
       modify->pre_force(vflag);
       timer->stamp(Timer::MODIFY);
     }
-    //fprintf(screen,"Verlet run checkpoint 8\n");
     if (pair_compute_flag) {
       force->pair->compute(eflag,vflag);
       timer->stamp(Timer::PAIR);
     } 
-    //fprintf(screen,"Verlet run checkpoint 9\n");
     if (atom->molecular != Atom::ATOMIC) {
       if (force->bond) force->bond->compute(eflag,vflag);
       if (force->angle) force->angle->compute(eflag,vflag);
@@ -361,7 +330,6 @@ void Verlet::run(int n)
     }
 
     // force modifications, final time integration, diagnostics
-    //fprintf(screen,"Verlet run checkpoint 10\n");
     if (n_post_force) modify->post_force(vflag);
     modify->final_integrate();
     if (n_end_of_step) modify->end_of_step();
@@ -374,7 +342,6 @@ void Verlet::run(int n)
       output->write(ntimestep);
       timer->stamp(Timer::OUTPUT);
     }
-    //fprintf(screen,"Verlet run checkpoint 11\n");
   }
 }
 

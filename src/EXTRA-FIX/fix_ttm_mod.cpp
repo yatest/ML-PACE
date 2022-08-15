@@ -226,7 +226,6 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
         for (int iz = 0; iz < nzgrid; iz++) {
           atom->T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
         }
-    fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", atom->T_e_avg);
   }
 }
 
@@ -1083,10 +1082,9 @@ void FixTTMMod::end_of_step()
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
 
-  // TODO: calculate T_e_avg here so that it is calculated at the end of every step
-  // and can then be read by PACE when calculating the forces on the next step
-  // Need T_e_avg to be a variable that can be accessed by PACE module
-  // Maybe also want to use a flag to only calculate if needed
+  // calculate T_e_avg here so that it is calculated at the end of every step
+  // and can then be read by PACE when calculating the forces on the next step.
+  // only do so if Te_flag is set
   if (atom->Te_flag) {
     atom->T_e_avg = 0.0;
     for (int ix = 0; ix < nxgrid; ix++)
@@ -1094,9 +1092,6 @@ void FixTTMMod::end_of_step()
         for (int iz = 0; iz < nzgrid; iz++) {
           atom->T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
         }
-    fprintf(screen, "fix_ttm_mod T_e_avg = %f\n", atom->T_e_avg);
-    // might need to Bcast T_e_avg or even average it over all procs if
-    // this isn't all just done on proc 0.
   }
 }
 

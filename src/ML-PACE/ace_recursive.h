@@ -135,6 +135,16 @@ class ACERecursiveEvaluator : public ACEEvaluator {
      */
     Array2D<DOUBLE_TYPE> DG_cache = Array2D<DOUBLE_TYPE>("DG_cache");
 
+    /**
+     * cache for \f$ R_{nl}(r)\f$
+     * shape:[max_jnum][nradbase][0..lmax]
+     */
+    Array3D<DOUBLE_TYPE> R_cache = Array3D<DOUBLE_TYPE>("R_cache");
+
+    /**
+     * pointer to the ACEBasisSet object
+     */
+    ACECTildeBasisSet *basis_set = nullptr;
 
     /**
      * cache for derivatives of \f$ R_{nl}(r)\f$
@@ -186,19 +196,6 @@ class ACERecursiveEvaluator : public ACEEvaluator {
     bool recursive = true;
 
 public:
-    //MOVE BACK TO PRIVATE AFTER
-    /**
-     * cache for \f$ R_{nl}(r)\f$
-     * shape:[max_jnum][nradbase][0..lmax]
-     */
-    Array3D<DOUBLE_TYPE> R_cache = Array3D<DOUBLE_TYPE>("R_cache");
-
-    /**
-     * pointer to the ACEBasisSet object
-     */
-    ACECTildeBasisSet *basis_set = nullptr;
-    //MOVE BACK TO PRIVATE AFTER
-
 
     ACERecursiveEvaluator() = default;
 

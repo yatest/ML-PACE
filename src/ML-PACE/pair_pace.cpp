@@ -158,7 +158,6 @@ void PairPACE::compute(int eflag, int vflag) {
     // number of atoms in cell
     int nlocal = atom->nlocal;
     int newton_pair = force->newton_pair;
-    fprintf(screen,"Proc %d, pair_pace checkpoint 1\n",comm->me);
 
     // number of atoms including ghost atoms
     int nall = nlocal + atom->nghost;
@@ -168,7 +167,6 @@ void PairPACE::compute(int eflag, int vflag) {
 
     // ilist: list of "i" atoms for which neighbor lists exist
     ilist = list->ilist;
-    fprintf(screen,"Proc %d, pair_pace checkpoint 2\n",comm->me);
     //numneigh: the length of each these neigbor list
     numneigh = list->numneigh;
 
@@ -179,7 +177,6 @@ void PairPACE::compute(int eflag, int vflag) {
         snprintf(str, 128, "inum: %d nlocal: %d are different", inum, nlocal);
         error->all(FLERR, str);
     }
-    fprintf(screen,"Proc %d, pair_pace checkpoint 3\n",comm->me);
     // Aidan Thompson told RD (26 July 2019) that practically always holds:
     // inum = nlocal
     // i = ilist(ii) < inum
@@ -199,27 +196,16 @@ void PairPACE::compute(int eflag, int vflag) {
         if (jnum > max_jnum)
             max_jnum = jnum;
     }
-    fprintf(screen,"Proc %d, pair_pace checkpoint 4\n",comm->me);
-    fprintf(screen,"Proc %d, Te_flag = %d\n",comm->me,atom->Te_flag);
     if (!interpolate) {
-        fprintf(screen,"Proc %d, max_jnum = %d\n",comm->me,max_jnum);
-        fprintf(screen,"Proc %d, ace->R_cache.get_dim(0) = %d\n",comm->me,ace->R_cache.get_dim(0));
-        fprintf(screen,"Proc %d, ace->R_cache.get_dim(0) < max_jnum = %d\n",comm->me,static_cast<int>(ace->R_cache.get_dim(0)) < max_jnum);
         ace->resize_neighbours_cache(max_jnum);
-        fprintf(screen,"Proc %d, pair_pace checkpoint 5\n",comm->me);
     } else {
         for (k = 0; k < nbasis; k++){
             // if T_e_avg is homogeneous, can calculate T_u, T_l, and a here
-            fprintf(screen,"Proc %d, k = %d\n",comm->me,k);
-            fprintf(screen,"Proc %d, nbasis = %d\n",comm->me,nbasis);
-            fprintf(screen,"Proc %d, max_jnum = %d\n",comm->me,max_jnum);
             ace_list[k]->resize_neighbours_cache(max_jnum);   
         }
-        fprintf(screen,"Proc %d, pair_pace checkpoint 5\n",comm->me);
         // if not using T_e_avg then use T_e input to pace command
         if (!atom->Te_flag) atom->T_e_avg = T_e_in;
     }
-    if (comm->me == 0) fprintf(screen,"pair_pace T_e_avg = %f",atom->T_e_avg);
     //loop over atoms
     for (ii = 0; ii < list->inum; ii++) {
         i = list->ilist[ii];
@@ -523,38 +509,19 @@ void PairPACE::coeff(int narg, char **arg) {
         if (comm->me == 0) {
             // load ACE potential file names from potential_file_name
             nbasis = 0;
-            //string line;
-            //std::vector<char *> potential_file_name_list;
-            //std::vector<int> temps_list;
-            //std::ifstream infile;
-            //infile.open(potential_file_name);
-            fprintf(screen, "potential_file_name = %s\n", potential_file_name);
             try {
                 PotentialFileReader reader(lmp, potential_file_name, "ACE potential files");
-                //if (!infile.is_open())
-                //    throw invalid_argument("Could not open file " + filename);
-                //while(getline(infile, line)){
-                    //read number of files and names
-                //    potential_file_name_list.push_back(const_cast<char *>(line.c_str()));
-                //    ++nbasis;
                 int nwords;
                 char *line;
                 while ((line = reader.next_line())) {
-                    fprintf(screen, "line = %s", line);
                     nwords = utils::count_words(line);
                     if (nwords != 2) error->all(FLERR, "List of potentials not in correct format");
                     auto line_token = ValueTokenizer(line);
                     temps_list.push_back(line_token.next_int());
                     potential_file_name_list.push_back(line_token.next_string());
-                    fprintf(screen, "temp[%d] = %d\n", nbasis, temps_list[nbasis]);
-                    fprintf(screen, "potential_name[%d] = %s\n", nbasis, potential_file_name_list[nbasis].c_str());
                     ++nbasis;
                 }
                 if (nbasis < 2) error->all(FLERR, "Could not read two or more potential file names");
-                for (int x = 0; x < nbasis; x++) {
-                    fprintf(screen, "%s\n", potential_file_name_list[x].c_str());
-                    fprintf(screen, "%d\n", temps_list[x]);
-                }
             } catch (std::exception &e) {
                 error->one(FLERR,e.what());
             }
@@ -563,8 +530,6 @@ void PairPACE::coeff(int narg, char **arg) {
         MPI_Bcast(&nbasis,1,MPI_INT,0,world);
         if (comm->me != 0) {
             temps_list.resize(nbasis);
-            // potential_file_name_list.resize(nbasis);
-            fprintf(screen, "proc 1 nbasis = %d", nbasis);
         }
         MPI_Bcast(&temps_list[0],temps_list.size(),MPI_INT,0,world);
         
@@ -581,28 +546,16 @@ void PairPACE::coeff(int narg, char **arg) {
             }
             MPI_Bcast(const_cast<char*>(pot_file_temp.data()), pot_file_len, MPI_CHAR, 0, world);
             if (comm->me != 0) {
-                fprintf(screen, "pot_file_temp = %s\n", pot_file_temp.c_str());
                 potential_file_name_list.emplace_back(pot_file_temp);
                 // if we do not set pot_file_temp to a new value as below the previous values of
                 // potential_file_name_list get overwritten by the next value of pot_file_temp (given 
                 // that the strings are the same length). Why is this?
                 pot_file_temp = "blahblahblah";
-                fprintf(screen, "potential_file_name_list[0] = %s\n", potential_file_name_list[0].c_str());
-                fprintf(screen, "potential_file_name_list[%d] = %s\n", x, potential_file_name_list[x].c_str());
-            }
-        }
-        fprintf(screen, "I am running on proc %d\n", comm->me);
-        if (comm->me != 0) {
-            for (int x = 0; x < nbasis; x++) {
-                fprintf(screen, "temps_list[%d] = %d\n", x, temps_list[x]);
-                fprintf(screen, "potential_file_name_list[%d] = %s\n", x, potential_file_name_list[x].c_str());
             }
         }
 
         // TWY: load all potential files if interpolating
         // access individual objects as basis_set_list[i]
-        // DELETE ACECTildeBasisSet * OBJECTS AT END
-        //std::vector<ACECTildeBasisSet *> basis_set_list;
         basis_set_list.reserve(nbasis);
         for (int i = 0; i < nbasis; i++) {
             basis_set_list.push_back(new ACECTildeBasisSet());
@@ -688,9 +641,6 @@ void PairPACE::coeff(int narg, char **arg) {
         if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
 
         ace->set_basis(*basis_set);
-        fprintf(screen,"proc %d crad[0] = %f\n", comm->me, basis_set->radial_functions->crad(0, 0, 0, 0, 0));
-        fprintf(screen,"proc %d get_all_coeffs[0] = %f\n", comm->me, basis_set->get_all_coeffs()[0]);
-        fprintf(screen,"Proc %d, ace->basis_set->get_all_coeffs()[0] = %f\n",comm->me,ace->basis_set->get_all_coeffs()[0]);
     } else {
         // TWY: loop over all potential files
         //std::vector<ACERecursiveEvaluator *> ace_list;
@@ -775,8 +725,6 @@ void PairPACE::coeff(int narg, char **arg) {
 
 
             ace_list[x]->set_basis(*basis_set_list[x]);
-            fprintf(screen,"proc %d crad[0] = %f", comm->me, basis_set_list[x]->radial_functions->crad(0, 0, 0, 0, 0));
-            fprintf(screen,"proc %d get_all_coeffs[0] = %f", comm->me, basis_set_list[x]->get_all_coeffs()[0]);
         }
     }
 }

@@ -369,9 +369,6 @@ void Domain::set_local_box()
     if (mysplit[2][1] < 1.0) subhi[2] = boxlo[2] + zprd*mysplit[2][1];
     else subhi[2] = boxhi[2];
   }
-  fprintf(screen,"Proc %d, sublo[0] = %f, subhi[0] = %f\n",comm->me,sublo[0],subhi[0]);
-  fprintf(screen,"Proc %d, sublo[1] = %f, subhi[1] = %f\n",comm->me,sublo[1],subhi[1]);
-  fprintf(screen,"Proc %d, sublo[2] = %f, subhi[2] = %f\n",comm->me,sublo[2],subhi[2]);
 }
 
 /* ----------------------------------------------------------------------
@@ -961,7 +958,6 @@ void Domain::subbox_too_small_check(double thresh)
       if (delta*prd[2] < thresh) flag = 1;
     }
   }
-  fprintf(screen,"Proc %d, thresh (neighbor skin) = %f\n",comm->me,thresh);
   int flagall;
   MPI_Allreduce(&flag,&flagall,1,MPI_INT,MPI_SUM,world);
   if (flagall && comm->me == 0)

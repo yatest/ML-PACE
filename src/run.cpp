@@ -168,9 +168,7 @@ void Run::command(int narg, char **arg)
 
     if (preflag || update->first_update == 0) {
       lmp->init();
-      fprintf(screen,"lmp->init() complete");
       update->integrate->setup(1);
-      fprintf(screen,"update->integrate->setup(1) complete");
     } else output->setup(0);
 
     timer->init();
