@@ -902,11 +902,8 @@ void LAMMPS::init()
                          //   atom_vec init uses deform_vremap
   modify->init();        // modify must come after update, force, atom, domain
   neighbor->init();      // neighbor must come after force, modify
-  fprintf(screen,"finished neighbor init");
   comm->init();          // comm must come after force, modify, neighbor, atom
-  fprintf(screen,"finished comm init");
   output->init();        // output must come after domain, force, modify
-  fprintf(screen,"finished output init");
 }
 
 /* ----------------------------------------------------------------------
