@@ -8,6 +8,7 @@
 !*/src/ML-PACE/pair_pace.cpp
 !*/src/ML-PACE/pair_pace.h
 !*/src/ML-PACE/ace_evaluator.cpp
+!*/src/ML-PACE/ace_radial.cpp
 !*/src/ML-PACE/ace_evaluator.h
 !*/src/ML-PACE/ace_recursive.h
 !*/src/atom.h

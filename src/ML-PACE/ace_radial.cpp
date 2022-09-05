@@ -518,28 +518,39 @@ void
 ACERadialFunctions::radcore(DOUBLE_TYPE r, DOUBLE_TYPE pre, DOUBLE_TYPE lambda, DOUBLE_TYPE cutoff, DOUBLE_TYPE &cr,
                             DOUBLE_TYPE &dcr, DOUBLE_TYPE r_in, DOUBLE_TYPE delta_in) {
 
-    DOUBLE_TYPE r2, lr2, y, x0, env, denv;
+    DOUBLE_TYPE r2, x0, env, denv, phi, r_a, a;
+    DOUBLE_TYPE b1, b2, b3, b4, c1, c2, c3, c4;
 
     // repulsion strictly positive and decaying
+
+    // pre = 1/(4*pi*epsilon_0) * Z_i * Z_j * e^2
     pre = abs(pre);
+    // lambda is now Z_i and we assume Z_i == Z_j 
     lambda = abs(lambda);
 
     r2 = r * r;
-    lr2 = lambda * r2;
-    if (lr2 < 50.0) {
-        y = exp(-lr2);
-        cr = pre * y / r;
-        dcr = -pre * y * (2.0 * lr2 + 1.0) / r2;
 
-        x0 = r / cutoff;
-        env = 0.5 * (1.0 + cos(pi * x0));
-        denv = -0.5 * sin(pi * x0) * pi / cutoff;
-        dcr = cr * denv + dcr * env;
-        cr = cr * env;
-    } else {
-        cr = 0.0;
-        dcr = 0.0;
-    }
+    b1 = 0.18175;
+    c1 = 3.19980;
+    b2 = 0.50986;
+    c2 = 0.94229;
+    b3 = 0.28022;
+    c3 = 0.40290;
+    b4 = 0.02817;
+    c4 = 0.20162;
+
+    a = 0.46850 / (2 * pow(lambda, 0.23));
+    r_a = r / a;
+    phi = b1*exp(-c1*r_a) + b2*exp(-c2*r_a) + b3*exp(-c3*r_a) + b4*exp(-c4*r_a);
+    cr = pre * phi / r;
+    dcr = -(pre/r)*((b1*c1/a)*exp(-c1*r_a) + (b2*c2/a)*exp(-c2*r_a) + (b3*c3/a)*exp(-c3*r_a) + (b4*c4/a)*exp(-c4*r_a)) - (pre * phi / r2);
+
+    x0 = r / cutoff;
+    env = 0.5 * (1.0 + cos(pi * x0));
+    denv = -0.5 * sin(pi * x0) * pi / cutoff;
+    dcr = cr * denv + dcr * env;
+    cr = cr * env;
+
 
     if (inner_cutoff_type == "distance") {
         // core repulsion became non-zero only within r < cut_in + dcut_in
