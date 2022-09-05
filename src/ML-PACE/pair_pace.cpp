@@ -233,12 +233,10 @@ void PairPACE::compute(int eflag, int vflag) {
                 exit(EXIT_FAILURE);
             }
         } else {
-        // TWY: repeat for all potentials
-        // Can we only repeat for the two potentials bounding T_e_avg?
-        // Would it cause issues if the other potentials aren't kept updated?
+        // TWY: update only the two potentials bounding T_e_avg
             if (atom->T_e_avg != 0.0) {
                 for (k = 0; k < nbasis; k++) {
-                    if (temps_list[k] > atom->T_e_avg) {
+                    if (temps_list[k] >= atom->T_e_avg) {
                         if (k == 0) error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
                         T_u = k;
                         T_l = k-1;
