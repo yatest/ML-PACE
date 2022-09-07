@@ -234,10 +234,15 @@ void PairPACE::compute(int eflag, int vflag) {
             }
         } else {
         // TWY: update only the two potentials bounding T_e_avg
+        // TODO: ALLOW T=10000 WITHOUT ERROR
             if (atom->T_e_avg != 0.0) {
                 for (k = 0; k < nbasis; k++) {
-                    if (temps_list[k] >= atom->T_e_avg) {
-                        if (k == 0) error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
+                    if (temps_list[k] == atom->T_e_avg) {
+                        T_u = k;
+                        T_l = k;
+                        a = 1.0;
+                        break;
+                    } else if (temps_list[k] > atom->T_e_avg) {
                         T_u = k;
                         T_l = k-1;
                         a = (temps_list[T_u] - atom->T_e_avg) / (temps_list[T_u] - temps_list[T_l]);
@@ -246,17 +251,26 @@ void PairPACE::compute(int eflag, int vflag) {
                         error->all(FLERR, "Electronic temperature is not within the range of the ACE potentials");
                     }
                 }
-                try {
-                    ace_list[T_u]->compute_atom(i, x, type, jnum, jlist);
-                } catch (exception &e) {
-                    error->all(FLERR, e.what());
-                    exit(EXIT_FAILURE);
-                }
-                try {
-                    ace_list[T_l]->compute_atom(i, x, type, jnum, jlist);
-                } catch (exception &e) {
-                    error->all(FLERR, e.what());
-                    exit(EXIT_FAILURE);
+                if (T_u == T_l) {
+                    try {
+                        ace_list[T_l]->compute_atom(i, x, type, jnum, jlist);
+                    } catch (exception &e) {
+                        error->all(FLERR, e.what());
+                        exit(EXIT_FAILURE);
+                    }
+                } else {
+                    try {
+                        ace_list[T_u]->compute_atom(i, x, type, jnum, jlist);
+                    } catch (exception &e) {
+                        error->all(FLERR, e.what());
+                        exit(EXIT_FAILURE);
+                    }
+                    try {
+                        ace_list[T_l]->compute_atom(i, x, type, jnum, jlist);
+                    } catch (exception &e) {
+                        error->all(FLERR, e.what());
+                        exit(EXIT_FAILURE);
+                    }
                 }
             } else {
                     error->all(FLERR, "T_e_avg has not been set (= 0.0) before calculating ACE forces");
