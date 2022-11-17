@@ -219,13 +219,18 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   if (infile) read_electron_temperatures(infile);
 
   // set initial T_e_avg
+  // only average over electron cells that contain atoms
   if (atom->Te_flag) {
     atom->T_e_avg = 0.0;
+    numocccell = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) {
-          atom->T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
-        }
+        for (int iz = 0; iz < nzgrid; iz++) 
+          if (T_electron[ix][iy][iz] != 0.0) {
+            numocccell++;
+            atom->T_e_avg += T_electron[ix][iy][iz];      
+          }
+    atom->T_e_avg /= numocccell;
   }
 }
 
@@ -276,7 +281,7 @@ void FixTTMMod::init()
     error->all(FLERR,"Cannot use fix ttm/mod with triclinic box");
 
   // set force prefactors
-  if (ei_flag) electron_ion(T_electron[0][0][0], file_len);
+  if (ei_flag) electron_ion(T_e_avg, file_len);
 
   for (int i = 1; i <= atom->ntypes; i++) {
     gfactor1[i] = - gamma_p / force->ftm2v;
@@ -390,6 +395,7 @@ void FixTTMMod::post_force(int /*vflag*/)
             double len_factor = diff_x/(diff_x+free_path);
             if (movsur == 1) {
               if (x_at >= x_surf) {
+                // Why use C_ir and T_ir instead of C_i and T_i?
                 flangevin[i][0] -= pres_factor/ionic_density*((C_ir*T_ir*free_path/(diff_x+free_path)/(diff_x+free_path)) +
                                                               (len_factor/dx)*(C_ir*T_ir-C_i*T_i));
                 flangevin[i][1] -= pres_factor/ionic_density/dy*(C_iu*T_iu-C_i*T_i);
@@ -409,11 +415,15 @@ void FixTTMMod::post_force(int /*vflag*/)
           if (ix < surface_l) {
             t_surface_l = ix;
           }
+          if (ix >= surface_r) {
+            t_surface_r = ix + 1;
+          }
         }
       }
     }
   }
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
+  MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MIN,world);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -598,7 +608,7 @@ void FixTTMMod::read_parameters(const std::string &filename)
       reader.next_line();
       electron_temperature_min = reader.next_values(1).next_double();
 
-      // turn off surfaces
+      // turn on/off surfaces
 
       reader.next_line();
       surf_flag = reader.next_values(1).next_int();
@@ -672,7 +682,7 @@ void FixTTMMod::read_electron_ion(const std::string &filename, int file_len)
 /* -----------------------------------------------------------------------
    calculate temperature dependent electron-ion coupling for given T_e
 -------------------------------------------------------------------------- */
-// T_e = T_electron[0,0,0] so long as electron temperature is homogeneous
+// T_e = T_e_avg so long as electron temperature is reasonably homogeneous
 void FixTTMMod::electron_ion(double T_e, int file_len)
 {
   if (comm->me == 0) {
@@ -837,6 +847,8 @@ void FixTTMMod::end_of_step()
             if (TTT > 0) {
               if (ix < t_surface_l)
                 t_surface_l = ix;
+              if (ix >= t_surface_r)
+                t_surface_r = ix + 1;
             }
           }
     }
@@ -862,7 +874,7 @@ void FixTTMMod::end_of_step()
            flangevin[i][2]*v[i][2]);
       } else {
         if (ix >= t_surface_l) {
-          if (ix < surface_r)
+          if (ix < t_surface_r)
             net_energy_transfer[ix][iy][iz] +=
               (flangevin[i][0]*v[i][0] + flangevin[i][1]*v[i][1] +
                flangevin[i][2]*v[i][2]);
@@ -906,8 +918,8 @@ void FixTTMMod::end_of_step()
 
   if (surf_flag == 0) {
     // el heat capacity already includes the factor of rho_e
-    double electronic_specific_heat = el_properties(T_electron[0][0][0]).el_heat_capacity;
-    double electronic_thermal_conductivity = el_properties(T_electron[0][0][0]).el_thermal_conductivity;
+    double electronic_specific_heat = el_properties(T_e_avg).el_heat_capacity;
+    double electronic_thermal_conductivity = el_properties(T_e_avg).el_thermal_conductivity;
     // altered factor to 6 as stated in DL_POLY manual
     double stability_criterion = 1.0 -
       6.0*inner_dt/(electronic_specific_heat) *
@@ -978,12 +990,12 @@ void FixTTMMod::end_of_step()
             for (int iz = 0; iz < nzgrid; iz++)
               T_electron[ix][iy][iz] =
                 T_electron_first[ix][iy][iz];
-
+        // altered factor to 6 as stated in DL_POLY manual
         stability_criterion = 1.0 -
-          2.0*inner_dt/el_specific_heat *
+          6.0*inner_dt/el_specific_heat *
           (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
         if (stability_criterion < 0.0) {
-          inner_dt = 0.25*el_specific_heat /
+          inner_dt = (1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
         }
         num_inner_timesteps = static_cast<unsigned int>(update->dt/inner_dt) + 1;
@@ -1052,14 +1064,14 @@ void FixTTMMod::end_of_step()
                       (T_electron_old[ix][iy][right_z]-T_electron_old[ix][iy][iz])/dz -
                       cr_v_l_z*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][iy][left_z]/2.0).el_thermal_conductivity*
                       (T_electron_old[ix][iy][iz]-T_electron_old[ix][iy][left_z])/dz)/dz);
-                      // should probably be T_electron_old fed into el_properties
+                      // should maybe be T_electron_old fed into el_properties
                   T_electron[ix][iy][iz]+=inner_dt/el_properties(T_electron[ix][iy][iz]).el_heat_capacity*
                     (mult_factor -
                      net_energy_transfer_all[ix][iy][iz]/del_vol);
                 }
                 else T_electron[ix][iy][iz] =
                        T_electron_old[ix][iy][iz];
-                if ((T_electron[ix][iy][iz] > 0.0) && (T_electron[ix][iy][iz] < electron_temperature_min))
+                if (((ix >= t_surface_l) && (ix < t_surface_r)) && (T_electron[ix][iy][iz] < electron_temperature_min))
                   T_electron[ix][iy][iz] = T_electron[ix][iy][iz] + 0.5*(electron_temperature_min - T_electron[ix][iy][iz]);
 
                 if (el_properties(T_electron[ix][iy][iz]).el_thermal_conductivity > el_thermal_conductivity)
@@ -1075,8 +1087,6 @@ void FixTTMMod::end_of_step()
       } while (stability_criterion < 0.0);
     }
 
-  if (ei_flag) electron_ion(T_electron[0][0][0], file_len);
-
   // output of grid electron temperatures to file
 
   if (outfile && (update->ntimestep % outevery == 0))
@@ -1085,14 +1095,24 @@ void FixTTMMod::end_of_step()
   // calculate T_e_avg here so that it is calculated at the end of every step
   // and can then be read by PACE when calculating the forces on the next step.
   // only do so if Te_flag is set
+  // only average over electron cells that contain atoms
   if (atom->Te_flag) {
     atom->T_e_avg = 0.0;
+    numocccell = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) {
-          atom->T_e_avg += T_electron[ix][iy][iz]/ngridtotal;
-        }
+        for (int iz = 0; iz < nzgrid; iz++) 
+          if (T_electron[ix][iy][iz] != 0.0) {
+            numocccell++;
+            atom->T_e_avg += T_electron[ix][iy][iz];      
+          }
+    atom->T_e_avg /= numocccell;
   }
+
+  if (ei_flag) electron_ion(T_e_avg, file_len);
+
+  MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
+  MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MIN,world);
 }
 
 /* ----------------------------------------------------------------------
@@ -1203,7 +1223,20 @@ void FixTTMMod::restart(char *buf)
       for (int iz = 0; iz < nzgrid; iz++)
         T_electron[ix][iy][iz] = rlist[n++];
 
-  if (ei_flag) electron_ion(T_electron[0][0][0], file_len);
+  if (atom->Te_flag) {
+    atom->T_e_avg = 0.0;
+    numocccell = 0;
+    for (int ix = 0; ix < nxgrid; ix++)
+      for (int iy = 0; iy < nygrid; iy++)
+        for (int iz = 0; iz < nzgrid; iz++) 
+          if (T_electron[ix][iy][iz] != 0.0) {
+            numocccell++;
+            atom->T_e_avg += T_electron[ix][iy][iz];      
+          }
+    atom->T_e_avg /= numocccell;
+  }
+
+  if (ei_flag) electron_ion(T_e_avg, file_len);
 }
 
 /* ----------------------------------------------------------------------

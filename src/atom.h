@@ -191,7 +191,9 @@ class Atom : protected Pointers {
   // Currently only implemented for TTM, but in theory could 
   // read T_e_avg from average temperature of ions in system
   
-  int Te_flag = 0;
+  // Currently always set to 1 so that it can be used to calculate
+  // average temperature as input for g_ei
+  int Te_flag = 1;
   double T_e_avg;
 
   // SPIN package
