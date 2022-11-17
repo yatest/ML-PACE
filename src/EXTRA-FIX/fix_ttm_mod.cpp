@@ -281,7 +281,7 @@ void FixTTMMod::init()
     error->all(FLERR,"Cannot use fix ttm/mod with triclinic box");
 
   // set force prefactors
-  if (ei_flag) electron_ion(T_e_avg, file_len);
+  if (ei_flag) electron_ion(atom->T_e_avg, file_len);
 
   for (int i = 1; i <= atom->ntypes; i++) {
     gfactor1[i] = - gamma_p / force->ftm2v;
@@ -789,8 +789,6 @@ void FixTTMMod::write_electron_temperatures(const std::string &filename)
   for (ix = 0; ix < nxgrid; ix++)
     for (iy = 0; iy < nygrid; iy++)
       for (iz = 0; iz < nzgrid; iz++) {
-        if (movsur == 1 && T_electron[ix][iy][iz] == 0.0)
-          T_electron[ix][iy][iz] = electron_temperature_min;
         fprintf(fp,"%d %d %d %20.16g\n",ix,iy,iz,T_electron[ix][iy][iz]);
       }
 
@@ -918,8 +916,8 @@ void FixTTMMod::end_of_step()
 
   if (surf_flag == 0) {
     // el heat capacity already includes the factor of rho_e
-    double electronic_specific_heat = el_properties(T_e_avg).el_heat_capacity;
-    double electronic_thermal_conductivity = el_properties(T_e_avg).el_thermal_conductivity;
+    double electronic_specific_heat = el_properties(atom->T_e_avg).el_heat_capacity;
+    double electronic_thermal_conductivity = el_properties(atom->T_e_avg).el_thermal_conductivity;
     // altered factor to 6 as stated in DL_POLY manual
     double stability_criterion = 1.0 -
       6.0*inner_dt/(electronic_specific_heat) *
@@ -1109,7 +1107,7 @@ void FixTTMMod::end_of_step()
     atom->T_e_avg /= numocccell;
   }
 
-  if (ei_flag) electron_ion(T_e_avg, file_len);
+  if (ei_flag) electron_ion(atom->T_e_avg, file_len);
 
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
   MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MIN,world);
@@ -1236,7 +1234,7 @@ void FixTTMMod::restart(char *buf)
     atom->T_e_avg /= numocccell;
   }
 
-  if (ei_flag) electron_ion(T_e_avg, file_len);
+  if (ei_flag) electron_ion(atom->T_e_avg, file_len);
 }
 
 /* ----------------------------------------------------------------------
