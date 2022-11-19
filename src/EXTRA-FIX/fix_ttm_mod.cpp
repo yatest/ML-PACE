@@ -836,6 +836,9 @@ void FixTTMMod::end_of_step()
       for (int iz = 0; iz < nzgrid; iz++)
         net_energy_transfer[ix][iy][iz] = 0;
 
+  t_surface_l = surface_l;
+  t_surface_r = surface_r;
+
   if (surf_flag == 1) {
     if (movsur == 1) {
       for (int ix = 0; ix < nxgrid; ix++)
