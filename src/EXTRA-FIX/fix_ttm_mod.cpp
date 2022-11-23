@@ -225,7 +225,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
 
   // number of valence electrons per atom
   N_val = ionic_density / electronic_density;
-  MPI_Bcast(&N_val, 1, MPI_DOUBLE, 0, world);
+  //MPI_Bcast(&N_val, 1, MPI_DOUBLE, 0, world);
 
   // set initial T_e_avg
   // only average over electron cells that contain atoms
@@ -248,8 +248,10 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
     N_ele = (electronic_density * numocccell * (domain->xprd/nxgrid) 
             * (domain->yprd/nxgrid) * (domain->zprd/nzgrid));
 
-    MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
-    MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
+    //MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
+    //MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
+
+    fprintf(logfile, "Reached end of FixTTMMod call")
   }
 }
 
@@ -448,6 +450,8 @@ void FixTTMMod::post_force(int /*vflag*/)
   }
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
   MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MAX,world);
+
+  fprintf(logfile, "Reached end of post_force call")
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1163,6 +1167,8 @@ void FixTTMMod::end_of_step()
     atom->T_e_avg /= numocccell;
 
     MPI_Bcast(&rho_e[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
+
+    fprintf(logfile, "Reached end of end_of_step call")
   }
 }
 
