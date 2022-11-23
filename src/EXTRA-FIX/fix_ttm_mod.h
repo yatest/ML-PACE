@@ -74,8 +74,10 @@ class FixTTMMod : public Fix {
   double ***sum_vsq, ***sum_mass_vsq;
   double ***sum_vsq_all, ***sum_mass_vsq_all;
   double ***net_energy_transfer, ***net_energy_transfer_all;
+  double ***rho_e, ***N_ion, ***N_ion_all;
 
   double gamma_p, gamma_s, v_0, v_0_sq;
+  double N_ele, N_val;
   int skin_layer, surface_l, surface_r, t_surface_l, t_surface_r;
   int movsur, surf_flag;
   int numocccell;
@@ -85,8 +87,8 @@ class FixTTMMod : public Fix {
   double mult_factor, ttm_dt;
   double pres_factor, free_path, ionic_density;
   double electron_temperature_min;
-  el_heat_capacity_thermal_conductivity el_properties(double);
-  double el_sp_heat_integral(double);
+  el_heat_capacity_thermal_conductivity el_properties(double,double);
+  double el_sp_heat_integral(double,double);
 
   bool ei_flag;
 
