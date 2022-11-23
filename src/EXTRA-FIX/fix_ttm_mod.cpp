@@ -313,9 +313,10 @@ void FixTTMMod::init()
 
   for (int ix = 0; ix < nxgrid; ix++)
     for (int iy = 0; iy < nygrid; iy++)
-      for (int iz = 0; iz < nzgrid; iz++)
+      for (int iz = 0; iz < nzgrid; iz++) {
         net_energy_transfer_all[ix][iy][iz] = 0;
         N_ion_all[ix][iy][iz] = 0;
+      }
 
   if (utils::strmatch(update->integrate_style,"^respa"))
     nlevels_respa = ((Respa *) update->integrate)->nlevels;
@@ -863,9 +864,10 @@ void FixTTMMod::end_of_step()
 
   for (int ix = 0; ix < nxgrid; ix++)
     for (int iy = 0; iy < nygrid; iy++)
-      for (int iz = 0; iz < nzgrid; iz++)
+      for (int iz = 0; iz < nzgrid; iz++) {
         net_energy_transfer[ix][iy][iz] = 0;
         N_ion[ix][iy][iz] = 0;
+      }
 
   t_surface_l = surface_l;
   t_surface_r = surface_r;
