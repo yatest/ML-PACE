@@ -1194,9 +1194,9 @@ void FixTTMMod::end_of_step()
 
     N_ele_tot = 0.0;
     N_ion_tot = 0;
-    for (ix = 0; ix < nxgrid; ix++)
-      for (iy = 0; iy < nygrid; iy++)
-        for (iz = 0; iz < nzgrid; iz++) {
+    for (int ix = 0; ix < nxgrid; ix++)
+      for (int iy = 0; iy < nygrid; iy++)
+        for (int iz = 0; iz < nzgrid; iz++) {
           N_ele_tot += rho_e[ix][iy][iz];
           N_ion_tot += N_ion_all[ix][iy][iz];
         }
