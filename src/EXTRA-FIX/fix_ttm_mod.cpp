@@ -326,6 +326,7 @@ void FixTTMMod::init()
     for (int iy = 0; iy < nygrid; iy++)
       for (int iz = 0; iz < nzgrid; iz++) {
         net_energy_transfer_all[ix][iy][iz] = 0;
+        N_ion[ix][iy][iz] = 0;
         N_ion_all[ix][iy][iz] = 0;
       }
 
