@@ -1189,7 +1189,8 @@ void FixTTMMod::end_of_step()
     numocccell = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) 
+        for (int iz = 0; iz < nzgrid; iz++) { 
+          rho_e[ix][iy][iz] = 0.0;
           if (T_electron[ix][iy][iz] != 0.0) {
             numocccell++;
             // should T_e_avg depend on rho_e of each cell?
@@ -1198,6 +1199,7 @@ void FixTTMMod::end_of_step()
             rho_e[ix][iy][iz] = N_ion_all[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
                                 * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
           }
+        }
     atom->T_e_avg /= numocccell;
 
     fprintf(screen, "Recalculated T_e_avg and rho_e\n");
