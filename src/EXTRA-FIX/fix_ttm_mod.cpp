@@ -834,7 +834,7 @@ void FixTTMMod::write_electron_temperatures(const std::string &filename)
       }
 
   // print number of electrons to ensure it is staying constant
-  N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nxgrid) * (domain->zprd/nzgrid);
+  N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
   fprintf(fp,"N_ele_init = %20.16g, N_ele = %20.16g\n",N_ele,N_ele_tot);
 
   fclose(fp);
