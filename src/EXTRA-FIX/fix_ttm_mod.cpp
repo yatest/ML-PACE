@@ -238,12 +238,14 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
     numocccell = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) 
+        for (int iz = 0; iz < nzgrid; iz++) {
           if (T_electron[ix][iy][iz] != 0.0) {
             numocccell++;
             atom->T_e_avg += T_electron[ix][iy][iz];     
             rho_e[ix][iy][iz] = electronic_density; 
           }
+          N_ion[ix][iy][iz] = 0;
+        }
     atom->T_e_avg /= numocccell;
 
     fprintf(screen, "numocccell = %d\n",numocccell);
@@ -260,6 +262,57 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
 
     //MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
     //MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
+
+    double **x = atom->x;
+    int *mask = atom->mask;
+    int nlocal = atom->nlocal;
+
+    for (int i = 0; i < nlocal; i++)
+      if (mask[i] & groupbit) {
+        double xscale = (x[i][0] - domain->boxlo[0])/domain->xprd;
+        double yscale = (x[i][1] - domain->boxlo[1])/domain->yprd;
+        double zscale = (x[i][2] - domain->boxlo[2])/domain->zprd;
+        int ix = static_cast<int>(xscale*nxgrid + shift) - OFFSET;
+        int iy = static_cast<int>(yscale*nygrid + shift) - OFFSET;
+        int iz = static_cast<int>(zscale*nzgrid + shift) - OFFSET;
+        while (ix > nxgrid-1) ix -= nxgrid;
+        while (iy > nygrid-1) iy -= nygrid;
+        while (iz > nzgrid-1) iz -= nzgrid;
+        while (ix < 0) ix += nxgrid;
+        while (iy < 0) iy += nygrid;
+        while (iz < 0) iz += nzgrid;
+    
+        N_ion[ix][iy][iz]++;
+      }
+
+    if (atom->Te_flag) {
+      for (int ix = 0; ix < nxgrid; ix++)
+        for (int iy = 0; iy < nygrid; iy++)
+          for (int iz = 0; iz < nzgrid; iz++) { 
+            rho_e[ix][iy][iz] = 0.0;
+            if (T_electron[ix][iy][iz] != 0.0) {
+              // recalculate rho_e
+              rho_e[ix][iy][iz] = N_ion[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
+                                  * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
+            }
+          }
+
+    double N_ele_tot;
+    int N_ion_tot;
+
+    N_ele_tot = 0.0;
+    N_ion_tot = 0;
+    for (int ix = 0; ix < nxgrid; ix++)
+      for (int iy = 0; iy < nygrid; iy++)
+        for (int iz = 0; iz < nzgrid; iz++) 
+          if (T_electron[ix][iy][iz] != 0.0) {
+            N_ele_tot += rho_e[ix][iy][iz];
+            N_ion_tot += N_ion[ix][iy][iz];
+          }
+
+    // print number of electrons to ensure it is staying constant
+    N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
+    fprintf(screen,"N_ele_init = %20.16g, N_ele = %20.16g\n",N_ele,N_ele_tot);
 
     fprintf(screen, "Reached end of FixTTMMod call");
   }
