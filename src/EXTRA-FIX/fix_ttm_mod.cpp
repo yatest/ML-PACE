@@ -955,6 +955,7 @@ void FixTTMMod::end_of_step()
               }
             else if (T_electron[ix][iy][iz] > 0.0) el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
           }
+    fprintf(screen, "C_e = %20.16g, K_e = %20.16g\n",el_specific_heat,el_thermal_conductivity);
   }
   // num_inner_timesteps = # of inner steps (thermal solves)
   // required this MD step to maintain a stable explicit solve
@@ -1135,7 +1136,6 @@ void FixTTMMod::end_of_step()
                 if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat))
                   el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
               }
-              fprintf(screen, "Completed a loop of electron heat\n");
         }
         stability_criterion = 1.0 -
           2.0*inner_dt/el_specific_heat *
