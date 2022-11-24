@@ -1206,6 +1206,7 @@ void FixTTMMod::end_of_step()
 
     double N_ele_tot;
     int N_ion_tot;
+    int N_ion_tot2;
 
     N_ele_tot = 0.0;
     N_ion_tot = 0;
