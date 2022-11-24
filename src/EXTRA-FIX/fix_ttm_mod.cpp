@@ -225,7 +225,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   if (infile) read_electron_temperatures(infile);
 
   // number of valence electrons per atom
-  N_val = electronic_density / ion_density;
+  N_val = electronic_density / ionic_density;
   //MPI_Bcast(&N_val, 1, MPI_DOUBLE, 0, world);
 
   // set initial T_e_avg
@@ -244,6 +244,8 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
             rho_e[ix][iy][iz] = electronic_density; 
           }
     atom->T_e_avg /= numocccell;
+
+    fprintf(screen, "numocccell = %d\n",numocccell);
 
     // total number of electrons in electronic subsystem
     N_ele = (electronic_density * numocccell * (domain->xprd/nxgrid) 
@@ -1184,6 +1186,8 @@ void FixTTMMod::end_of_step()
     atom->T_e_avg /= numocccell;
 
     fprintf(screen, "Recalculated T_e_avg and rho_e\n");
+
+    fprintf(screen, "numocccell = %d\n",numocccell);
 
     if (ei_flag) electron_ion(atom->T_e_avg, file_len);
 
