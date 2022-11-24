@@ -1189,6 +1189,24 @@ void FixTTMMod::end_of_step()
 
     MPI_Bcast(&rho_e[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
 
+    double N_ele_tot;
+    int N_ion_tot;
+
+    N_ele_tot = 0.0;
+    N_ion_tot = 0;
+    for (ix = 0; ix < nxgrid; ix++)
+      for (iy = 0; iy < nygrid; iy++)
+        for (iz = 0; iz < nzgrid; iz++) {
+          N_ele_tot += rho_e[ix][iy][iz];
+          N_ion_tot += N_ion_all[ix][iy][iz];
+        }
+
+    // print number of electrons to ensure it is staying constant
+    N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nxgrid) * (domain->zprd/nzgrid);
+    fprintf(screen,"N_ele_init = %20.16g, N_ele = %20.16g\n",N_ele,N_ele_tot);
+
+    fprintf(screen, "N_ion = %d\n",N_ion_tot);
+
     fprintf(screen, "Reached end of end_of_step call");
   }
 }
