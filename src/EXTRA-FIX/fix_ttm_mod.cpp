@@ -905,7 +905,9 @@ void FixTTMMod::end_of_step()
     }
   }
   fprintf(screen, "nlocal = %d\n",nlocal);
-  for (int i = 0; i < nlocal; i++) {
+  int counter;
+  counter = 0;
+  for (int i = 0; i < nlocal; i++)
     if (mask[i] & groupbit) {
       double xscale = (x[i][0] - domain->boxlo[0])/domain->xprd;
       double yscale = (x[i][1] - domain->boxlo[1])/domain->yprd;
@@ -931,9 +933,11 @@ void FixTTMMod::end_of_step()
                flangevin[i][2]*v[i][2]);
         } 
       }
+      N_ion[ix][iy][iz]++;
+      counter++;
     }
-    N_ion[ix][iy][iz]++;
-  }
+  
+    fprintf(screen,"counter = %d\n",counter);
 
     fprintf(screen, "Summed N_ion on each processor\n");
 
