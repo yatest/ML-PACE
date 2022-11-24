@@ -938,14 +938,13 @@ void FixTTMMod::end_of_step()
   double del_vol = dx*dy*dz;
 
   double el_specific_heat = 0.0;
-  double el_thermal_conductivity = 0.0;
+  double el_thermal_conductivity = el_properties(electron_temperature_min,electronic_density).el_thermal_conductivity;
 
   if (surf_flag == 1) {
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
         for (int iz = 0; iz < nzgrid; iz++)
           {
-            double el_thermal_conductivity = el_properties(electron_temperature_min,rho_e[ix][iy][iz]).el_thermal_conductivity;
             if (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity > el_thermal_conductivity)
               el_thermal_conductivity = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity;
             if (el_specific_heat > 0.0)
@@ -1050,7 +1049,6 @@ void FixTTMMod::end_of_step()
           inner_dt = (1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
         }
-        fprintf(screen, "Calculated stab crit\n");
         num_inner_timesteps = static_cast<unsigned int>(update->dt/inner_dt) + 1;
         inner_dt = update->dt/double(num_inner_timesteps);
         if (num_inner_timesteps > 1000000)
