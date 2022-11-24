@@ -904,7 +904,7 @@ void FixTTMMod::end_of_step()
           }
     }
   }
-
+  fprintf(screen, "nlocal = %d\n",nlocal);
   for (int i = 0; i < nlocal; i++)
     if (mask[i] & groupbit) {
       double xscale = (x[i][0] - domain->boxlo[0])/domain->xprd;
@@ -1187,7 +1187,7 @@ void FixTTMMod::end_of_step()
             atom->T_e_avg += T_electron[ix][iy][iz];
             // recalculate rho_e
             rho_e[ix][iy][iz] = N_ion_all[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
-                                * (domain->yprd/nxgrid) * (domain->zprd/nzgrid));
+                                * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
           }
     atom->T_e_avg /= numocccell;
 
@@ -1212,7 +1212,7 @@ void FixTTMMod::end_of_step()
         }
 
     // print number of electrons to ensure it is staying constant
-    N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nxgrid) * (domain->zprd/nzgrid);
+    N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
     fprintf(screen,"N_ele_init = %20.16g, N_ele = %20.16g\n",N_ele,N_ele_tot);
 
     fprintf(screen, "N_ion = %d\n",N_ion_tot);
