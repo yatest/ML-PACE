@@ -326,7 +326,6 @@ void FixTTMMod::init()
     for (int iy = 0; iy < nygrid; iy++)
       for (int iz = 0; iz < nzgrid; iz++) {
         net_energy_transfer_all[ix][iy][iz] = 0;
-        N_ion[ix][iy][iz] = 0;
         N_ion_all[ix][iy][iz] = 0;
       }
 
@@ -1175,6 +1174,8 @@ void FixTTMMod::end_of_step()
   // sum up N_ion from all processors
   MPI_Allreduce(&N_ion[0][0][0],&N_ion_all[0][0][0],ngridtotal,MPI_INT,MPI_SUM,world);
 
+  fprintf(screen, "nxgrid = %d, nygrid = %d, nzgrid = %d\n",nxgrid,nygrid,nzgrid);
+
   fprintf(screen, "N_ion[50][0][0] = %d, N_ion_all[50][0][0] = %d\n",N_ion[50][0][0],N_ion_all[50][0][0]);
 
   fprintf(screen, "Summed N_ion over all processors\n");
@@ -1205,8 +1206,6 @@ void FixTTMMod::end_of_step()
 
     if (ei_flag) electron_ion(atom->T_e_avg, file_len);
 
-    MPI_Bcast(&rho_e[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
-
     double N_ele_tot;
     int N_ion_tot;
     int N_ion_tot2;
@@ -1216,11 +1215,12 @@ void FixTTMMod::end_of_step()
     N_ion_tot2 = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) {
-          N_ele_tot += rho_e[ix][iy][iz];
-          N_ion_tot += N_ion_all[ix][iy][iz];
-          N_ion_tot2 += N_ion[ix][iy][iz];
-        }
+        for (int iz = 0; iz < nzgrid; iz++) 
+          if (T_electron[ix][iy][iz] != 0.0) {
+            N_ele_tot += rho_e[ix][iy][iz];
+            N_ion_tot += N_ion_all[ix][iy][iz];
+            N_ion_tot2 += N_ion[ix][iy][iz];
+          }
 
     // print number of electrons to ensure it is staying constant
     N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
