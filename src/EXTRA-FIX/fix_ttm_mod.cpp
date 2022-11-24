@@ -225,7 +225,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   if (infile) read_electron_temperatures(infile);
 
   // number of valence electrons per atom
-  N_val = ionic_density / electronic_density;
+  N_val = electronic_density / ion_density;
   //MPI_Bcast(&N_val, 1, MPI_DOUBLE, 0, world);
 
   // set initial T_e_avg
@@ -1152,7 +1152,7 @@ void FixTTMMod::end_of_step()
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
 
-  fprintf(screen, "Completed writing electron temperature");
+  fprintf(screen, "Completed writing electron temperature\n");
 
   // is taking the min/max the correct thing to do here?
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
