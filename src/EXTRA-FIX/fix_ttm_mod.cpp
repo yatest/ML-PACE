@@ -246,10 +246,16 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
     atom->T_e_avg /= numocccell;
 
     fprintf(screen, "numocccell = %d\n",numocccell);
+    fprintf(screen, "electronic_density = %20.16g\n",electronic_density);
 
     // total number of electrons in electronic subsystem
     N_ele = (electronic_density * numocccell * (domain->xprd/nxgrid) 
             * (domain->yprd/nxgrid) * (domain->zprd/nzgrid));
+
+    fprintf(screen, "N_ele = %20.16g\n",N_ele);
+    fprintf(screen, "dx = %20.16g\n",domain->xprd/nxgrid);
+    fprintf(screen, "dy = %20.16g\n",domain->yprd/nygrid);
+    fprintf(screen, "dz = %20.16g\n",domain->zprd/nzgrid);
 
     //MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
     //MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
