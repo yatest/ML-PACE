@@ -1174,6 +1174,8 @@ void FixTTMMod::end_of_step()
   // sum up N_ion from all processors
   MPI_Allreduce(&N_ion[0][0][0],&N_ion_all[0][0][0],ngridtotal,MPI_INT,MPI_SUM,world);
 
+  fprintf(screen, "N_ion[50][0][0] = %d, N_ion_all[50][0][0] = %d\n",N_ion[50][0][0],N_ion_all[50][0][0]);
+
   fprintf(screen, "Summed N_ion over all processors\n");
 
   // calculate T_e_avg here so that it is calculated at the end of every step
