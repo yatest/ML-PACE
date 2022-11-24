@@ -250,7 +250,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
 
     // total number of electrons in electronic subsystem
     N_ele = (electronic_density * numocccell * (domain->xprd/nxgrid) 
-            * (domain->yprd/nxgrid) * (domain->zprd/nzgrid));
+            * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
 
     fprintf(screen, "N_ele = %20.16g\n",N_ele);
     fprintf(screen, "dx = %20.16g\n",domain->xprd/nxgrid);
