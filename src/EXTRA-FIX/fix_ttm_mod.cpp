@@ -215,9 +215,10 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   int ix,iy,iz;
   for (ix = 0; ix < nxgrid; ix++)
     for (iy = 0; iy < nygrid; iy++)
-      for (iz = 0; iz < nzgrid; iz++)
+      for (iz = 0; iz < nzgrid; iz++) {
         T_electron[ix][iy][iz] = tinit;
         rho_e[ix][iy][iz] = 0.0;
+      }
 
   // if specified, read initial electron temperatures from file
 
@@ -251,7 +252,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
     //MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
     //MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
 
-    fprintf(logfile, "Reached end of FixTTMMod call")
+    fprintf(screen, "Reached end of FixTTMMod call");
   }
 }
 
@@ -451,7 +452,7 @@ void FixTTMMod::post_force(int /*vflag*/)
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
   MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MAX,world);
 
-  fprintf(logfile, "Reached end of post_force call")
+  fprintf(screen, "Reached end of post_force call");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -866,12 +867,16 @@ void FixTTMMod::end_of_step()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
 
+  fprintf(screen, "Reached start of end_of_step call\n");
+
   for (int ix = 0; ix < nxgrid; ix++)
     for (int iy = 0; iy < nygrid; iy++)
       for (int iz = 0; iz < nzgrid; iz++) {
         net_energy_transfer[ix][iy][iz] = 0;
         N_ion[ix][iy][iz] = 0;
       }
+
+  fprintf(screen, "Set N_ion = 0\n");
 
   t_surface_l = surface_l;
   t_surface_r = surface_r;
@@ -920,6 +925,8 @@ void FixTTMMod::end_of_step()
       }
       N_ion[ix][iy][iz]++;
     }
+
+    fprintf(screen, "Summed N_ion on each processor\n");
 
   MPI_Allreduce(&net_energy_transfer[0][0][0],
                 &net_energy_transfer_all[0][0][0],
@@ -1016,6 +1023,8 @@ void FixTTMMod::end_of_step()
           }
     }
   } else {
+
+      fprintf(screen, "Entered electronic heat loop\n");
       double stability_criterion = 0.0;
 
       for (int ix = 0; ix < nxgrid; ix++)
@@ -1133,12 +1142,14 @@ void FixTTMMod::end_of_step()
       } while (stability_criterion < 0.0);
     }
 
+    fprintf(screen, "Completed electron heat loop\n");
+
   // output of grid electron temperatures to file
 
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
 
-  if (ei_flag) electron_ion(atom->T_e_avg, file_len);
+  fprintf(screen, "Completed writing electron temperature");
 
   // is taking the min/max the correct thing to do here?
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
@@ -1146,6 +1157,8 @@ void FixTTMMod::end_of_step()
 
   // sum up N_ion from all processors
   MPI_Allreduce(&N_ion[0][0][0],&N_ion_all[0][0][0],ngridtotal,MPI_INT,MPI_SUM,world);
+
+  fprintf(screen, "Summed N_ion over all processors\n");
 
   // calculate T_e_avg here so that it is calculated at the end of every step
   // and can then be read by PACE when calculating the forces on the next step.
@@ -1159,6 +1172,7 @@ void FixTTMMod::end_of_step()
         for (int iz = 0; iz < nzgrid; iz++) 
           if (T_electron[ix][iy][iz] != 0.0) {
             numocccell++;
+            // should T_e_avg depend on rho_e of each cell?
             atom->T_e_avg += T_electron[ix][iy][iz];
             // recalculate rho_e
             rho_e[ix][iy][iz] = N_ion_all[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
@@ -1166,9 +1180,13 @@ void FixTTMMod::end_of_step()
           }
     atom->T_e_avg /= numocccell;
 
+    fprintf(screen, "Recalculated T_e_avg and rho_e\n");
+
+    if (ei_flag) electron_ion(atom->T_e_avg, file_len);
+
     MPI_Bcast(&rho_e[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
 
-    fprintf(logfile, "Reached end of end_of_step call")
+    fprintf(screen, "Reached end of end_of_step call");
   }
 }
 
