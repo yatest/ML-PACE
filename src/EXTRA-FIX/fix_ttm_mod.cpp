@@ -226,6 +226,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
 
   // number of valence electrons per atom
   N_val = electronic_density / ionic_density;
+  fprintf(screen, "N_val = %20.16g\n",N_val);
   //MPI_Bcast(&N_val, 1, MPI_DOUBLE, 0, world);
 
   // set initial T_e_avg
