@@ -1045,6 +1045,7 @@ void FixTTMMod::end_of_step()
         stability_criterion = 1.0 -
           6.0*inner_dt/el_specific_heat *
           (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
+        fprintf(screen, "stab_crit = %20.16g\n",stability_criterion);
         if (stability_criterion < 0.0) {
           inner_dt = (1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
@@ -1134,10 +1135,12 @@ void FixTTMMod::end_of_step()
                 if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat))
                   el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
               }
+          fprintf(screen, "C_e = %20.16g, K_e = %20.16g\n",el_specific_heat,el_thermal_conductivity);
         }
         stability_criterion = 1.0 -
           2.0*inner_dt/el_specific_heat *
           (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
+        fprintf(screen, "stab_crit = %20.16g\n",stability_criterion);
 
       } while (stability_criterion < 0.0);
     }
