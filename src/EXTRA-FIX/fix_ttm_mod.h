@@ -74,7 +74,8 @@ class FixTTMMod : public Fix {
   double ***sum_vsq, ***sum_mass_vsq;
   double ***sum_vsq_all, ***sum_mass_vsq_all;
   double ***net_energy_transfer, ***net_energy_transfer_all;
-  double ***rho_e, ***N_ion, ***N_ion_all;
+  double ***rho_e;
+  int ***N_ion, ***N_ion_all;
 
   double gamma_p, gamma_s, v_0, v_0_sq;
   double N_ele, N_val;

@@ -1209,18 +1209,21 @@ void FixTTMMod::end_of_step()
 
     N_ele_tot = 0.0;
     N_ion_tot = 0;
+    N_ion_tot2 = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
         for (int iz = 0; iz < nzgrid; iz++) {
           N_ele_tot += rho_e[ix][iy][iz];
           N_ion_tot += N_ion_all[ix][iy][iz];
+          N_ion_tot2 += N_ion[ix][iy][iz];
         }
 
     // print number of electrons to ensure it is staying constant
     N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
     fprintf(screen,"N_ele_init = %20.16g, N_ele = %20.16g\n",N_ele,N_ele_tot);
 
-    fprintf(screen, "N_ion = %d\n",N_ion_tot);
+    fprintf(screen, "N_ion_tot = %d\n",N_ion_tot);
+    fprintf(screen, "N_ion_tot2 = %d\n",N_ion_tot2);
 
     fprintf(screen, "Reached end of end_of_step call");
   }
