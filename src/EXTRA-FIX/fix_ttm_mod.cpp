@@ -285,17 +285,16 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
         N_ion[ix][iy][iz]++;
       }
 
-    if (atom->Te_flag) {
-      for (int ix = 0; ix < nxgrid; ix++)
-        for (int iy = 0; iy < nygrid; iy++)
-          for (int iz = 0; iz < nzgrid; iz++) { 
-            rho_e[ix][iy][iz] = 0.0;
-            if (T_electron[ix][iy][iz] != 0.0) {
-              // recalculate rho_e
-              rho_e[ix][iy][iz] = N_ion[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
-                                  * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
-            }
+    for (int ix = 0; ix < nxgrid; ix++)
+      for (int iy = 0; iy < nygrid; iy++)
+        for (int iz = 0; iz < nzgrid; iz++) { 
+          rho_e[ix][iy][iz] = 0.0;
+          if (T_electron[ix][iy][iz] != 0.0) {
+            // recalculate rho_e
+            rho_e[ix][iy][iz] = N_ion[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
+                                * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
           }
+        }
 
     double N_ele_tot;
     int N_ion_tot;
