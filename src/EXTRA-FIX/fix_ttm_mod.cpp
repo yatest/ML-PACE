@@ -248,6 +248,8 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
         }
     atom->T_e_avg /= numocccell;
 
+    fprintf(screen, "rho_e[50][0][0] = %20.16g\n",rho_e[50][0][0]);
+
     fprintf(screen, "numocccell = %d\n",numocccell);
     fprintf(screen, "electronic_density = %20.16g\n",electronic_density);
 
@@ -295,6 +297,8 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
                                 * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
           }
         }
+
+    fprintf(screen, "rho_e[50][0][0] = %20.16g\n",rho_e[50][0][0]);
 
     double N_ele_tot;
     int N_ion_tot;
