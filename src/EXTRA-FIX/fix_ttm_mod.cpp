@@ -278,23 +278,6 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
 
     //MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
     //MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
-
-    int N_ion_tot;
-
-    N_ele = 0.0;
-    N_ion_tot = 0;
-    for (int ix = 0; ix < nxgrid; ix++)
-      for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) 
-          if (T_electron[ix][iy][iz] != 0.0) {
-            N_ele += rho_e[ix][iy][iz];
-            N_ion_tot += N_ion_all[ix][iy][iz];
-          }
-
-    // print number of electrons to ensure it is staying constant
-    N_ele *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
-    fprintf(screen,"N_ele_init = %20.16g\n",N_ele);
-    fprintf(screen,"N_ion = %d\n",N_ion_tot);
   }
 }
 
@@ -1220,9 +1203,6 @@ void FixTTMMod::end_of_step()
           if (T_electron[ix][iy][iz] != 0.0) {
             N_ion_tot += N_ion_all[ix][iy][iz];
           }
-
-    // print number of electrons to ensure it is staying constant
-    fprintf(screen, "N_ion = %d\n",N_ion_tot);
   }
 }
 
