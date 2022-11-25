@@ -218,6 +218,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
       for (iz = 0; iz < nzgrid; iz++) {
         T_electron[ix][iy][iz] = tinit;
         rho_e[ix][iy][iz] = 0.0;
+        N_ion[ix][iy][iz] = 0;
       }
 
   // if specified, read initial electron temperatures from file
@@ -226,45 +227,14 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
 
   // number of valence electrons per atom
   N_val = electronic_density / ionic_density;
-  fprintf(screen, "N_val = %20.16g\n",N_val);
   //MPI_Bcast(&N_val, 1, MPI_DOUBLE, 0, world);
+
 
   // set initial T_e_avg
   // only average over electron cells that contain atoms
   // rho_e should be moved out of this if-statement once
   // we allow Te_flag != 1
   if (atom->Te_flag) {
-    atom->T_e_avg = 0.0;
-    numocccell = 0;
-    for (int ix = 0; ix < nxgrid; ix++)
-      for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) {
-          if (T_electron[ix][iy][iz] != 0.0) {
-            numocccell++;
-            atom->T_e_avg += T_electron[ix][iy][iz];     
-            rho_e[ix][iy][iz] = electronic_density; 
-          }
-          N_ion[ix][iy][iz] = 0;
-        }
-    atom->T_e_avg /= numocccell;
-
-    fprintf(screen, "rho_e[50][0][0] = %20.16g\n",rho_e[50][0][0]);
-
-    fprintf(screen, "numocccell = %d\n",numocccell);
-    fprintf(screen, "electronic_density = %20.16g\n",electronic_density);
-
-    // total number of electrons in electronic subsystem
-    N_ele = (electronic_density * numocccell * (domain->xprd/nxgrid) 
-            * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
-
-    fprintf(screen, "N_ele = %20.16g\n",N_ele);
-    fprintf(screen, "dx = %20.16g\n",domain->xprd/nxgrid);
-    fprintf(screen, "dy = %20.16g\n",domain->yprd/nygrid);
-    fprintf(screen, "dz = %20.16g\n",domain->zprd/nzgrid);
-
-    //MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
-    //MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
-
     double **x = atom->x;
     int *mask = atom->mask;
     int nlocal = atom->nlocal;
@@ -287,37 +257,44 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
         N_ion[ix][iy][iz]++;
       }
 
+    // sum up N_ion from all processors
+    MPI_Allreduce(&N_ion[0][0][0],&N_ion_all[0][0][0],ngridtotal,MPI_INT,MPI_SUM,world);
+
+    atom->T_e_avg = 0.0;
+    numocccell = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) { 
+        for (int iz = 0; iz < nzgrid; iz++) {
           rho_e[ix][iy][iz] = 0.0;
           if (T_electron[ix][iy][iz] != 0.0) {
-            // recalculate rho_e
-            rho_e[ix][iy][iz] = N_ion[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
-                                * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
+            numocccell++;
+            atom->T_e_avg += T_electron[ix][iy][iz];   
+            rho_e[ix][iy][iz] = N_ion_all[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
+                                * (domain->yprd/nygrid) * (domain->zprd/nzgrid));  
           }
         }
+        
+    atom->T_e_avg /= numocccell;
 
-    fprintf(screen, "rho_e[50][0][0] = %20.16g\n",rho_e[50][0][0]);
+    //MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
+    //MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
 
-    double N_ele_tot;
     int N_ion_tot;
 
-    N_ele_tot = 0.0;
+    N_ele = 0.0;
     N_ion_tot = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
         for (int iz = 0; iz < nzgrid; iz++) 
           if (T_electron[ix][iy][iz] != 0.0) {
-            N_ele_tot += rho_e[ix][iy][iz];
-            N_ion_tot += N_ion[ix][iy][iz];
+            N_ele += rho_e[ix][iy][iz];
+            N_ion_tot += N_ion_all[ix][iy][iz];
           }
 
     // print number of electrons to ensure it is staying constant
-    N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
-    fprintf(screen,"N_ele_init = %20.16g, N_ele = %20.16g\n",N_ele,N_ele_tot);
-
-    fprintf(screen, "Reached end of FixTTMMod call");
+    N_ele *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
+    fprintf(screen,"N_ele_init = %20.16g\n",N_ele);
+    fprintf(screen,"N_ion = %d\n",N_ion_tot);
   }
 }
 
@@ -383,7 +360,6 @@ void FixTTMMod::init()
     for (int iy = 0; iy < nygrid; iy++)
       for (int iz = 0; iz < nzgrid; iz++) {
         net_energy_transfer_all[ix][iy][iz] = 0;
-        N_ion_all[ix][iy][iz] = 0;
       }
 
   if (utils::strmatch(update->integrate_style,"^respa"))
@@ -517,7 +493,6 @@ void FixTTMMod::post_force(int /*vflag*/)
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
   MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MAX,world);
 
-  fprintf(screen, "Reached end of post_force call");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -932,16 +907,12 @@ void FixTTMMod::end_of_step()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
 
-  fprintf(screen, "Reached start of end_of_step call\n");
-
   for (int ix = 0; ix < nxgrid; ix++)
     for (int iy = 0; iy < nygrid; iy++)
       for (int iz = 0; iz < nzgrid; iz++) {
         net_energy_transfer[ix][iy][iz] = 0;
         N_ion[ix][iy][iz] = 0;
       }
-
-  fprintf(screen, "Set N_ion = 0\n");
 
   t_surface_l = surface_l;
   t_surface_r = surface_r;
@@ -961,9 +932,7 @@ void FixTTMMod::end_of_step()
           }
     }
   }
-  fprintf(screen, "nlocal = %d\n",nlocal);
-  int counter;
-  counter = 0;
+
   for (int i = 0; i < nlocal; i++)
     if (mask[i] & groupbit) {
       double xscale = (x[i][0] - domain->boxlo[0])/domain->xprd;
@@ -991,13 +960,8 @@ void FixTTMMod::end_of_step()
         } 
       }
       N_ion[ix][iy][iz]++;
-      counter++;
     }
   
-    fprintf(screen,"counter = %d\n",counter);
-
-    fprintf(screen, "Summed N_ion on each processor\n");
-
   MPI_Allreduce(&net_energy_transfer[0][0][0],
                 &net_energy_transfer_all[0][0][0],
                 ngridtotal,MPI_DOUBLE,MPI_SUM,world);
@@ -1024,7 +988,6 @@ void FixTTMMod::end_of_step()
               }
             else if (T_electron[ix][iy][iz] > 0.0) el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
           }
-    fprintf(screen, "C_e = %20.16g, K_e = %20.16g\n",el_specific_heat,el_thermal_conductivity);
   }
   // num_inner_timesteps = # of inner steps (thermal solves)
   // required this MD step to maintain a stable explicit solve
@@ -1094,7 +1057,6 @@ void FixTTMMod::end_of_step()
     }
   } else {
 
-      fprintf(screen, "Entered electronic heat loop\n");
       double stability_criterion = 0.0;
 
       for (int ix = 0; ix < nxgrid; ix++)
@@ -1115,7 +1077,6 @@ void FixTTMMod::end_of_step()
         stability_criterion = 1.0 -
           6.0*inner_dt/el_specific_heat *
           (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
-        fprintf(screen, "stab_crit = %20.16g\n",stability_criterion);
         if (stability_criterion < 0.0) {
           inner_dt = (1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
@@ -1205,24 +1166,19 @@ void FixTTMMod::end_of_step()
                 if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat))
                   el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
               }
-          fprintf(screen, "C_e = %20.16g, K_e = %20.16g\n",el_specific_heat,el_thermal_conductivity);
         }
         stability_criterion = 1.0 -
           2.0*inner_dt/el_specific_heat *
           (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
-        fprintf(screen, "stab_crit = %20.16g\n",stability_criterion);
 
       } while (stability_criterion < 0.0);
     }
 
-    fprintf(screen, "Completed electron heat loop\n");
 
   // output of grid electron temperatures to file
 
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
-
-  fprintf(screen, "Completed writing electron temperature\n");
 
   // is taking the min/max the correct thing to do here?
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
@@ -1230,12 +1186,6 @@ void FixTTMMod::end_of_step()
 
   // sum up N_ion from all processors
   MPI_Allreduce(&N_ion[0][0][0],&N_ion_all[0][0][0],ngridtotal,MPI_INT,MPI_SUM,world);
-
-  fprintf(screen, "nxgrid = %d, nygrid = %d, nzgrid = %d\n",nxgrid,nygrid,nzgrid);
-
-  fprintf(screen, "N_ion[50][0][0] = %d, N_ion_all[50][0][0] = %d\n",N_ion[50][0][0],N_ion_all[50][0][0]);
-
-  fprintf(screen, "Summed N_ion over all processors\n");
 
   // calculate T_e_avg here so that it is calculated at the end of every step
   // and can then be read by PACE when calculating the forces on the next step.
@@ -1259,36 +1209,20 @@ void FixTTMMod::end_of_step()
         }
     atom->T_e_avg /= numocccell;
 
-    fprintf(screen, "Recalculated T_e_avg and rho_e\n");
-
-    fprintf(screen, "numocccell = %d\n",numocccell);
-
     if (ei_flag) electron_ion(atom->T_e_avg, file_len);
 
-    double N_ele_tot;
     int N_ion_tot;
-    int N_ion_tot2;
 
-    N_ele_tot = 0.0;
     N_ion_tot = 0;
-    N_ion_tot2 = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
         for (int iz = 0; iz < nzgrid; iz++) 
           if (T_electron[ix][iy][iz] != 0.0) {
-            N_ele_tot += rho_e[ix][iy][iz];
             N_ion_tot += N_ion_all[ix][iy][iz];
-            N_ion_tot2 += N_ion[ix][iy][iz];
           }
 
     // print number of electrons to ensure it is staying constant
-    N_ele_tot *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
-    fprintf(screen,"N_ele_init = %20.16g, N_ele = %20.16g\n",N_ele,N_ele_tot);
-
-    fprintf(screen, "N_ion_tot = %d\n",N_ion_tot);
-    fprintf(screen, "N_ion_tot2 = %d\n",N_ion_tot2);
-
-    fprintf(screen, "Reached end of end_of_step call");
+    fprintf(screen, "N_ion = %d\n",N_ion_tot);
   }
 }
 
