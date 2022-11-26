@@ -262,6 +262,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
 
     atom->T_e_avg = 0.0;
     numocccell = 0;
+    N_ele = 0.0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
         for (int iz = 0; iz < nzgrid; iz++) {
@@ -270,11 +271,14 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
             numocccell++;
             atom->T_e_avg += T_electron[ix][iy][iz];   
             rho_e[ix][iy][iz] = N_ion_all[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
-                                * (domain->yprd/nygrid) * (domain->zprd/nzgrid));  
+                                * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
+            N_ele += rho_e[ix][iy][iz];
           }
         }
         
     atom->T_e_avg /= numocccell;
+
+    N_ele *= (domain->xprd/nxgrid) * (domain->yprd/nygrid) * (domain->zprd/nzgrid);
 
     //MPI_Bcast(&rho_e[0][0][0], ngridtotal, MPI_DOUBLE, 0, world);
     //MPI_Bcast(&N_ele, 1, MPI_DOUBLE, 0, world);
