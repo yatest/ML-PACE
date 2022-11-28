@@ -1136,27 +1136,33 @@ void FixTTMMod::end_of_step()
                 if (cr_vac != 0) {
                   // if C_e == 0, we will be dividing by 0 and calculation will break
                   // therefore only works whilst active electron cells contain at least
-                  // one atom
-                  // could fix by setting cr_vac = 0 or T_electron = 0 when no atoms in cell
-                  T_electron[ix][iy][iz] =
-                    T_electron_old[ix][iy][iz] +
-                    inner_dt/el_properties(T_electron_old[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity *
-                    ((cr_v_r_x*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[right_x][iy][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[right_x][iy][iz]/2.0).el_thermal_conductivity*
-                      (T_electron_old[right_x][iy][iz]-T_electron_old[ix][iy][iz])/dx -
-                      cr_v_l_x*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[left_x][iy][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[left_x][iy][iz]/2.0).el_thermal_conductivity*
-                      (T_electron_old[ix][iy][iz]-T_electron_old[left_x][iy][iz])/dx)/dx +
-                     (cr_v_r_y*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][right_y][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][right_y][iz]/2.0).el_thermal_conductivity*
-                      (T_electron_old[ix][right_y][iz]-T_electron_old[ix][iy][iz])/dy -
-                      cr_v_l_y*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][left_y][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][left_y][iz]/2.0).el_thermal_conductivity*
-                      (T_electron_old[ix][iy][iz]-T_electron_old[ix][left_y][iz])/dy)/dy +
-                     (cr_v_r_z*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][iy][right_z]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][iy][right_z]/2.0).el_thermal_conductivity*
-                      (T_electron_old[ix][iy][right_z]-T_electron_old[ix][iy][iz])/dz -
-                      cr_v_l_z*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][iy][left_z]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][iy][left_z]/2.0).el_thermal_conductivity*
-                      (T_electron_old[ix][iy][iz]-T_electron_old[ix][iy][left_z])/dz)/dz);
-                      // should maybe be T_electron_old fed into el_properties
-                  T_electron[ix][iy][iz]+=inner_dt/el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity*
-                    (mult_factor -
-                     net_energy_transfer_all[ix][iy][iz]/del_vol);
+                  // one atom.
+                  // could fix by setting cr_vac = 0 or T_electron = 0 when no atoms in cell.
+                  // since there are multiple electronic timesteps per LAMMPS timestep, T can
+                  // be non-zero before rho_e is updated to be non-zero. this leads to a divide 
+                  // by zero error. therefore, prevent heat transfer with cells with rho_e = 0.
+                  if (rho_e[ix][iy][iz] != 0.0) {
+                    T_electron[ix][iy][iz] =
+                      T_electron_old[ix][iy][iz] +
+                      inner_dt/el_properties(T_electron_old[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity *
+                      ((cr_v_r_x*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[right_x][iy][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[right_x][iy][iz]/2.0).el_thermal_conductivity*
+                        (T_electron_old[right_x][iy][iz]-T_electron_old[ix][iy][iz])/dx -
+                        cr_v_l_x*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[left_x][iy][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[left_x][iy][iz]/2.0).el_thermal_conductivity*
+                        (T_electron_old[ix][iy][iz]-T_electron_old[left_x][iy][iz])/dx)/dx +
+                      (cr_v_r_y*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][right_y][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][right_y][iz]/2.0).el_thermal_conductivity*
+                        (T_electron_old[ix][right_y][iz]-T_electron_old[ix][iy][iz])/dy -
+                        cr_v_l_y*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][left_y][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][left_y][iz]/2.0).el_thermal_conductivity*
+                        (T_electron_old[ix][iy][iz]-T_electron_old[ix][left_y][iz])/dy)/dy +
+                      (cr_v_r_z*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][iy][right_z]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][iy][right_z]/2.0).el_thermal_conductivity*
+                        (T_electron_old[ix][iy][right_z]-T_electron_old[ix][iy][iz])/dz -
+                        cr_v_l_z*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][iy][left_z]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][iy][left_z]/2.0).el_thermal_conductivity*
+                        (T_electron_old[ix][iy][iz]-T_electron_old[ix][iy][left_z])/dz)/dz);
+                        // should maybe be T_electron_old fed into el_properties
+                    T_electron[ix][iy][iz]+=inner_dt/el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity*
+                      (mult_factor -
+                      net_energy_transfer_all[ix][iy][iz]/del_vol);
+                  } else T_electron[ix][iy][iz] =
+                          T_electron_old[ix][iy][iz];
                 }
                 else T_electron[ix][iy][iz] =
                        T_electron_old[ix][iy][iz];
@@ -1169,6 +1175,9 @@ void FixTTMMod::end_of_step()
                   if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat))
                     el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
                 }
+
+                if (T_electron[63][0][0] != 0.0)
+                  fprintf(screen,"T_electron[63][0][0] = %20.16g\n",T_electron[63][0][0]);
 
                 if (el_specific_heat == 0.0) {
                   fprintf(screen,"C_e = %20.16g\n",el_specific_heat);
