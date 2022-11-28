@@ -970,12 +970,27 @@ void FixTTMMod::end_of_step()
               el_thermal_conductivity = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity;
             if (el_specific_heat > 0.0)
               {
-                if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat))
+                if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat)) {
                   el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
+                  if (el_specific_heat == 0.0) {
+                    fprintf(screen,"T_electron[%d][%d][%d] = %20.16g, rho_e[ix][iy][iz] = %20.16g\n",ix,iy,iz,T_electron[ix][iy][iz],rho_e[ix][iy][iz]);
+                    fprintf(screen,"t_surface_l = %d, t_surface_r = %d\n",t_surface_l,t_surface_r);
+                    fprintf(screen,"N_ion[ix][iy][iz] = %d\n",N_ion[ix][iy][iz]); 
+                  }
+                }
               }
-            else if (T_electron[ix][iy][iz] > 0.0) el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
+            else if (T_electron[ix][iy][iz] > 0.0) {
+              el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
+              if (el_specific_heat == 0.0) {
+                  fprintf(screen,"T_electron[%d][%d][%d] = %20.16g, rho_e[ix][iy][iz] = %20.16g\n",ix,iy,iz,T_electron[ix][iy][iz],rho_e[ix][iy][iz]);
+                  fprintf(screen,"t_surface_l = %d, t_surface_r = %d\n",t_surface_l,t_surface_r);
+                  fprintf(screen,"N_ion[ix][iy][iz] = %d\n",N_ion[ix][iy][iz]); 
+              }
+            }
           }
   }
+
+  fprintf(screen,"C_e = %20.16g, K_e = %20.16g\n",el_specific_heat,el_thermal_conductivity);
   // num_inner_timesteps = # of inner steps (thermal solves)
   // required this MD step to maintain a stable explicit solve
 
@@ -1148,15 +1163,28 @@ void FixTTMMod::end_of_step()
                 if (((ix >= t_surface_l) && (ix < t_surface_r)) && (T_electron[ix][iy][iz] < electron_temperature_min))
                   T_electron[ix][iy][iz] = T_electron[ix][iy][iz] + 0.5*(electron_temperature_min - T_electron[ix][iy][iz]);
 
-                if (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity > el_thermal_conductivity)
-                  el_thermal_conductivity = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity;
-                if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat))
-                  el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
+                if (rho_e[ix][iy][iz] != 0.0) {
+                  if (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity > el_thermal_conductivity)
+                    el_thermal_conductivity = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity;
+                  if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat))
+                    el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
+                }
+
+                if (el_specific_heat == 0.0) {
+                  fprintf(screen,"C_e = %20.16g\n",el_specific_heat);
+                  fprintf(screen,"T_electron[%d][%d][%d] = %20.16g, rho_e[63][0][0] = %20.16g\n",ix,iy,iz,T_electron[ix][iy][iz],rho_e[63][0][0]);
+                  fprintf(screen,"t_surface_l = %d, t_surface_r = %d\n",t_surface_l,t_surface_r);
+                  fprintf(screen,"N_ion[ix][iy][iz] = %d\n",N_ion[ix][iy][iz]);
+                  error->all(FLERR,"C_e == 0");
+                }
+                if (el_thermal_conductivity == 0.0)
+                  fprintf(screen,"K_e = %20.16g\n",el_thermal_conductivity);
               }
         }
         stability_criterion = 1.0 -
           2.0*inner_dt/el_specific_heat *
           (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
+
 
       } while (stability_criterion < 0.0);
     }
