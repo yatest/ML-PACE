@@ -81,7 +81,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   T_electron(nullptr), T_electron_old(nullptr), sum_vsq(nullptr), sum_mass_vsq(nullptr),
   sum_vsq_all(nullptr), sum_mass_vsq_all(nullptr), net_energy_transfer(nullptr),
   net_energy_transfer_all(nullptr), g_ei(nullptr), T_el(nullptr), rho_e(nullptr),
-  N_ion(nullptr), N_ion_all(nullptr)
+  N_ion(nullptr), N_ion_all(nullptr), switched_on(nullptr)
 {
   if (lmp->citeme) lmp->citeme->add(cite_fix_ttm_mod);
 
@@ -191,6 +191,7 @@ FixTTMMod::FixTTMMod(LAMMPS *lmp, int narg, char **arg) :
   memory->create(rho_e,nxgrid,nygrid,nzgrid,"ttm/mod:rho_e");
   memory->create(N_ion,nxgrid,nygrid,nzgrid,"ttm/mod:N_ion");
   memory->create(N_ion_all,nxgrid,nygrid,nzgrid,"ttm/mod:N_ion_all");
+  memory->create(switched_on,nxgrid,nygrid,nzgrid,"ttm/mod:switched_on");
   flangevin = nullptr;
   grow_arrays(atom->nmax);
 
@@ -310,6 +311,7 @@ FixTTMMod::~FixTTMMod()
   memory->destroy(rho_e);
   memory->destroy(N_ion);
   memory->destroy(N_ion_all);
+  memory->destroy(switched_on);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -899,6 +901,7 @@ void FixTTMMod::end_of_step()
       for (int iz = 0; iz < nzgrid; iz++) {
         net_energy_transfer[ix][iy][iz] = 0;
         N_ion[ix][iy][iz] = 0;
+        switched_on[ix][iy][iz] = 0;
       }
 
   t_surface_l = surface_l;
@@ -946,12 +949,32 @@ void FixTTMMod::end_of_step()
                flangevin[i][2]*v[i][2]);
         } 
       }
+      if ix < t_surface_l
+        error->all(FLERR,"Atom not between left and right surfaces");
+      if ix >= t_surface_r
+        error->all(FLERR,"Atom not between left and right surfaces");
       N_ion[ix][iy][iz]++;
     }
   
   MPI_Allreduce(&net_energy_transfer[0][0][0],
                 &net_energy_transfer_all[0][0][0],
                 ngridtotal,MPI_DOUBLE,MPI_SUM,world);
+
+  // is taking the min/max the correct thing to do here?
+  MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
+  MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MAX,world);
+
+  // sum up N_ion from all processors
+  MPI_Allreduce(&N_ion[0][0][0],&N_ion_all[0][0][0],ngridtotal,MPI_INT,MPI_SUM,world);
+
+  for (int ix = 0; ix < nxgrid; ix++)
+    for (int iy = 0; iy < nygrid; iy++)
+      for (int iz = 0; iz < nzgrid; iz++) { 
+        rho_e[ix][iy][iz] = 0.0;
+        // recalculate rho_e
+        rho_e[ix][iy][iz] = N_ion_all[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
+                            * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
+      }
 
   double dx = domain->xprd/nxgrid;
   double dy = domain->yprd/nygrid;
@@ -972,25 +995,14 @@ void FixTTMMod::end_of_step()
               {
                 if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat)) {
                   el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
-                  if (el_specific_heat == 0.0) {
-                    fprintf(screen,"T_electron[%d][%d][%d] = %20.16g, rho_e[ix][iy][iz] = %20.16g\n",ix,iy,iz,T_electron[ix][iy][iz],rho_e[ix][iy][iz]);
-                    fprintf(screen,"t_surface_l = %d, t_surface_r = %d\n",t_surface_l,t_surface_r);
-                    fprintf(screen,"N_ion[ix][iy][iz] = %d\n",N_ion[ix][iy][iz]); 
-                  }
                 }
               }
             else if (T_electron[ix][iy][iz] > 0.0) {
               el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
-              if (el_specific_heat == 0.0) {
-                  fprintf(screen,"T_electron[%d][%d][%d] = %20.16g, rho_e[ix][iy][iz] = %20.16g\n",ix,iy,iz,T_electron[ix][iy][iz],rho_e[ix][iy][iz]);
-                  fprintf(screen,"t_surface_l = %d, t_surface_r = %d\n",t_surface_l,t_surface_r);
-                  fprintf(screen,"N_ion[ix][iy][iz] = %d\n",N_ion[ix][iy][iz]); 
-              }
             }
           }
   }
 
-  fprintf(screen,"C_e = %20.16g, K_e = %20.16g\n",el_specific_heat,el_thermal_conductivity);
   // num_inner_timesteps = # of inner steps (thermal solves)
   // required this MD step to maintain a stable explicit solve
 
@@ -1166,8 +1178,18 @@ void FixTTMMod::end_of_step()
                 }
                 else T_electron[ix][iy][iz] =
                        T_electron_old[ix][iy][iz];
-                if (((ix >= t_surface_l) && (ix < t_surface_r)) && (T_electron[ix][iy][iz] < electron_temperature_min))
-                  T_electron[ix][iy][iz] = T_electron[ix][iy][iz] + 0.5*(electron_temperature_min - T_electron[ix][iy][iz]);
+
+                if (((ix >= t_surface_l) && (ix < t_surface_r)) && (T_electron[ix][iy][iz] == 0.0))
+                  if (ix < static_cast<float> (nxgrid/2.0)) {
+                    // if we are to the left of the solid, take T from the cell to the right
+                    switched_on[ix][iy][iz] = 1;
+                  } else {
+                    switched_on[ix][iy][iz] = -1;
+                  }
+
+                if (switched_on[ix][iy][iz] != 0)
+                  if (T_electron[ix][iy][iz] < T_electron[ix+switched_on[ix][iy][iz]][iy][iz])
+                    T_electron[ix][iy][iz] = T_electron[ix][iy][iz] + 0.5*(T_electron[ix+switched_on[ix][iy][iz]][iy][iz] - T_electron[ix][iy][iz]);
 
                 if (rho_e[ix][iy][iz] != 0.0) {
                   if (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity > el_thermal_conductivity)
@@ -1175,19 +1197,6 @@ void FixTTMMod::end_of_step()
                   if ((T_electron[ix][iy][iz] > 0.0) && (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity < el_specific_heat))
                     el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
                 }
-
-                if (T_electron[63][0][0] != 0.0)
-                  fprintf(screen,"T_electron[63][0][0] = %20.16g\n",T_electron[63][0][0]);
-
-                if (el_specific_heat == 0.0) {
-                  fprintf(screen,"C_e = %20.16g\n",el_specific_heat);
-                  fprintf(screen,"T_electron[%d][%d][%d] = %20.16g, rho_e[63][0][0] = %20.16g\n",ix,iy,iz,T_electron[ix][iy][iz],rho_e[63][0][0]);
-                  fprintf(screen,"t_surface_l = %d, t_surface_r = %d\n",t_surface_l,t_surface_r);
-                  fprintf(screen,"N_ion[ix][iy][iz] = %d\n",N_ion[ix][iy][iz]);
-                  error->all(FLERR,"C_e == 0");
-                }
-                if (el_thermal_conductivity == 0.0)
-                  fprintf(screen,"K_e = %20.16g\n",el_thermal_conductivity);
               }
         }
         stability_criterion = 1.0 -
@@ -1203,13 +1212,6 @@ void FixTTMMod::end_of_step()
 
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
-
-  // is taking the min/max the correct thing to do here?
-  MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
-  MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MAX,world);
-
-  // sum up N_ion from all processors
-  MPI_Allreduce(&N_ion[0][0][0],&N_ion_all[0][0][0],ngridtotal,MPI_INT,MPI_SUM,world);
 
   // calculate T_e_avg here so that it is calculated at the end of every step
   // and can then be read by PACE when calculating the forces on the next step.
@@ -1235,15 +1237,6 @@ void FixTTMMod::end_of_step()
 
     if (ei_flag) electron_ion(atom->T_e_avg, file_len);
 
-    int N_ion_tot;
-
-    N_ion_tot = 0;
-    for (int ix = 0; ix < nxgrid; ix++)
-      for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) 
-          if (T_electron[ix][iy][iz] != 0.0) {
-            N_ion_tot += N_ion_all[ix][iy][iz];
-          }
   }
 }
 
