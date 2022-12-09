@@ -949,9 +949,9 @@ void FixTTMMod::end_of_step()
                flangevin[i][2]*v[i][2]);
         } 
       }
-      if ix < t_surface_l
+      if (ix < t_surface_l)
         error->all(FLERR,"Atom not between left and right surfaces");
-      if ix >= t_surface_r
+      if (ix >= t_surface_r)
         error->all(FLERR,"Atom not between left and right surfaces");
       N_ion[ix][iy][iz]++;
     }
@@ -984,6 +984,11 @@ void FixTTMMod::end_of_step()
   double el_specific_heat = 0.0;
   double el_thermal_conductivity = el_properties(electron_temperature_min,electronic_density).el_thermal_conductivity;
 
+  // Not sure why we are taking the worst combination of C_e and K_e, even though they may not be the same
+  // electronic cell. Instead, we know that K_e = D_e * C_e for all cells (due to the 2T-MD definiton of K_e)
+  // so we can define the stability criterion by \Delta t < (\Delta x)**2/(6*\alpha)  = (\Delta x)**2/(6*D_e).
+  // Since \Delta x and \Delta t are constants, the stability criterion is also a constant.
+
   if (surf_flag == 1) {
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
@@ -1006,8 +1011,14 @@ void FixTTMMod::end_of_step()
   // num_inner_timesteps = # of inner steps (thermal solves)
   // required this MD step to maintain a stable explicit solve
 
-  int num_inner_timesteps = 1;
+  // since the stability criterion should be constant for the reasons states above, we can calculate it
+  // once here and set inner_dt and num_inner_timesteps to give allow it to work first time.
+  // set inner_dt to 0.8 * max_inner_dt to ensure stability of the algorithm.
   double inner_dt = update->dt;
+  int num_inner_timesteps = 1;
+
+  inner_dt = 0.8*(1.0/6.0)/(el_th_diff*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
+  num_inner_timesteps = static_cast<int>(update->dt/inner_dt) + 1;
 
   if (surf_flag == 0) {
     // el heat capacity already includes the factor of rho_e
@@ -1089,8 +1100,8 @@ void FixTTMMod::end_of_step()
         // therefore only works whilst active electron cells contain at least
         // one atom
         stability_criterion = 1.0 -
-          6.0*inner_dt/el_specific_heat *
-          (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
+          6.0*inner_dt *
+          (el_th_diff*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
         if (stability_criterion < 0.0) {
           inner_dt = (1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
@@ -1150,9 +1161,8 @@ void FixTTMMod::end_of_step()
                   // therefore only works whilst active electron cells contain at least
                   // one atom.
                   // could fix by setting cr_vac = 0 or T_electron = 0 when no atoms in cell.
-                  // since there are multiple electronic timesteps per LAMMPS timestep, T can
-                  // be non-zero before rho_e is updated to be non-zero. this leads to a divide 
-                  // by zero error. therefore, prevent heat transfer with cells with rho_e = 0.
+                  // if there is only one atom in a cell, rho_e << 1, el_specific_heat << 1,
+                  // and inner_dt << 1, leading to a massive number of iterations.
                   if (rho_e[ix][iy][iz] != 0.0) {
                     T_electron[ix][iy][iz] =
                       T_electron_old[ix][iy][iz] +
@@ -1200,7 +1210,7 @@ void FixTTMMod::end_of_step()
               }
         }
         stability_criterion = 1.0 -
-          2.0*inner_dt/el_specific_heat *
+          6.0*inner_dt/el_specific_heat *
           (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
 
 
