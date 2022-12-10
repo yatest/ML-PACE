@@ -1105,6 +1105,7 @@ void FixTTMMod::end_of_step()
         if (stability_criterion < 0.0) {
           inner_dt = (1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
+          fprintf(screen,"stability_criterion < 0.0");
         }
         num_inner_timesteps = static_cast<unsigned int>(update->dt/inner_dt) + 1;
         inner_dt = update->dt/double(num_inner_timesteps);
