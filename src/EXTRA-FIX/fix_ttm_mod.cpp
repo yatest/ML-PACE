@@ -1192,7 +1192,7 @@ void FixTTMMod::end_of_step()
 
                 if (((ix >= t_surface_l) && (ix < t_surface_r)) && (T_electron[ix][iy][iz] == 0.0))
                   if (ix < static_cast<float> (nxgrid/2.0)) {
-                    // if we are to the left of the solid, take T from the cell to the right
+                    // if we are to the left of the center of the system (and therefore solid), take T from the cell to the right
                     switched_on[ix][iy][iz] = 1;
                   } else {
                     switched_on[ix][iy][iz] = -1;
@@ -1210,11 +1210,6 @@ void FixTTMMod::end_of_step()
                 }
               }
         }
-        stability_criterion = 1.0 -
-          6.0*inner_dt/el_specific_heat *
-          (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
-
-
       } while (stability_criterion < 0.0);
     }
 
