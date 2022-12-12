@@ -401,6 +401,9 @@ void FixTTMMod::post_force(int /*vflag*/)
       while (iy < 0) iy += nygrid;
       while (iz < 0) iz += nzgrid;
 
+      if (update->ntimestep > 1200)
+        fprintf(screen,"update->ntimestep=%d\n",update->ntimestep);
+
       if (T_electron[ix][iy][iz] < 0)
         error->all(FLERR,"Electronic temperature dropped below zero");
 
@@ -1201,7 +1204,7 @@ void FixTTMMod::end_of_step()
                   }
 
                 if (switched_on[ix][iy][iz] != 0)
-                  fprintf(screen,"New electronic cell switched on\n")
+                  fprintf(screen,"New electronic cell switched on, ix=%d, iy=%d, iz=%d, ts=%d\n",ix,iy,iz,update->ntimestep);
                   if (T_electron[ix][iy][iz] < T_electron[ix+switched_on[ix][iy][iz]][iy][iz])
                     T_electron[ix][iy][iz] = T_electron[ix][iy][iz] + 0.5*(T_electron[ix+switched_on[ix][iy][iz]][iy][iz] - T_electron[ix][iy][iz]);
 
