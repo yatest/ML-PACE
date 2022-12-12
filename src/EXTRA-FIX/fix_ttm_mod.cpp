@@ -980,12 +980,12 @@ void FixTTMMod::end_of_step()
                             * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
       }
 
-  if (rho_e[37,0,0] == 0.0)
+  if (rho_e[37][0][0] == 0.0)
     fprintf(screen,"rho_e[37,0,0] = 0.0 at timestep %d",update->ntimestep);
 
   if (update->ntimestep >= 1270) {
-    fprintf(screen,"rho_e[36,0,0] = %20.16f\n",rho_e[36,0,0]);
-    fprintf(screen,"rho_e[37,0,0] = %20.16f\n",rho_e[37,0,0]);
+    fprintf(screen,"rho_e[36,0,0] = %20.16f\n",rho_e[36][0][0]);
+    fprintf(screen,"rho_e[37,0,0] = %20.16f\n",rho_e[37][0][0]);
   }
 
   double dx = domain->xprd/nxgrid;
@@ -1129,13 +1129,13 @@ void FixTTMMod::end_of_step()
         if (num_inner_timesteps > 1000000)
           error->warning(FLERR,"Too many inner timesteps in fix ttm/mod");
         if (update->ntimestep == 1271) {
-          fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
-          fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37,0,0]);
+          fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
+          fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
           fprintf(screen,"num_inner_timesteps = %d",num_inner_timesteps);
         }
         if (update->ntimestep == 1272) {
-          fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
-          fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37,0,0]);
+          fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
+          fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
           fprintf(screen,"num_inner_timesteps = %d",num_inner_timesteps);
         }
         for (int ith_inner_timestep = 0; ith_inner_timestep < num_inner_timesteps;
@@ -1239,12 +1239,12 @@ void FixTTMMod::end_of_step()
                 }
               }
           if (update->ntimestep == 1271) {
-            fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
-            fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37,0,0]);
+            fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
+            fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
           }
           if (update->ntimestep == 1272) {
-            fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
-            fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37,0,0]);
+            fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
+            fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
           }
         }
       } while (stability_criterion < 0.0);
