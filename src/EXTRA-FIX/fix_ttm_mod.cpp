@@ -964,6 +964,7 @@ void FixTTMMod::end_of_step()
                 ngridtotal,MPI_DOUBLE,MPI_SUM,world);
 
   // is taking the min/max the correct thing to do here?
+  // should we be using surface_l/r in the later portions of this section?
   MPI_Allreduce(&t_surface_l,&surface_l,1,MPI_INT,MPI_MIN,world);
   MPI_Allreduce(&t_surface_r,&surface_r,1,MPI_INT,MPI_MAX,world);
 
@@ -979,11 +980,7 @@ void FixTTMMod::end_of_step()
                             * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
       }
 
-  if (update->ntimestep == 1271) {
-          fprintf(screen,"rho_e[36,0,0] = %20.16f\n",rho_e[36,0,0]);
-          fprintf(screen,"rho_e[37,0,0] = %20.16f\n",rho_e[37,0,0]);
-  }
-  if (update->ntimestep == 1272) {
+  if (update->ntimestep >= 1270) {
           fprintf(screen,"rho_e[36,0,0] = %20.16f\n",rho_e[36,0,0]);
           fprintf(screen,"rho_e[37,0,0] = %20.16f\n",rho_e[37,0,0]);
   }
@@ -1123,9 +1120,15 @@ void FixTTMMod::end_of_step()
         inner_dt = update->dt/double(num_inner_timesteps);
         if (num_inner_timesteps > 1000000)
           error->warning(FLERR,"Too many inner timesteps in fix ttm/mod");
+        if (update->ntimestep == 1271) {
+          fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
+          fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37,0,0]);
+          fprintf(screen,"num_inner_timesteps = %d",num_inner_timesteps);
+        }
         if (update->ntimestep == 1272) {
           fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
           fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37,0,0]);
+          fprintf(screen,"num_inner_timesteps = %d",num_inner_timesteps);
         }
         for (int ith_inner_timestep = 0; ith_inner_timestep < num_inner_timesteps;
              ith_inner_timestep++) {
@@ -1245,7 +1248,7 @@ void FixTTMMod::end_of_step()
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
 
-  if (outfile && (update->ntimestep == 1272))
+  if (outfile && (update->ntimestep >= 1270))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
 
   // calculate T_e_avg here so that it is calculated at the end of every step
