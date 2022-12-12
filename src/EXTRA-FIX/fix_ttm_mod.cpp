@@ -1033,6 +1033,10 @@ void FixTTMMod::end_of_step()
   num_inner_timesteps = static_cast<int>(update->dt/inner_dt) + 1;
   
   if (update->ntimestep == 1270) {
+    fprintf(screen,"dx = %20.16f\n",dx);
+    fprintf(screen,"dy = %20.16f\n",dy);
+    fprintf(screen,"dz = %20.16f\n",dz);
+    fprintf(screen,"el_th_diff = %20.16f\n",el_th_diff);
     fprintf(screen,"inner_dt = %20.16f\n",inner_dt);
     fprintf(screen,"update->dt = %20.16f\n",update->dt);
   }
