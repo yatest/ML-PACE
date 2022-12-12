@@ -386,6 +386,9 @@ void FixTTMMod::post_force(int /*vflag*/)
 
   // apply damping and thermostat to all atoms in fix group
 
+  if (update->ntimestep > 1270)
+        fprintf(screen,"post_force update->ntimestep=%d\n",update->ntimestep);
+
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       double xscale = (x[i][0] - domain->boxlo[0])/domain->xprd;
@@ -400,9 +403,6 @@ void FixTTMMod::post_force(int /*vflag*/)
       while (ix < 0) ix += nxgrid;
       while (iy < 0) iy += nygrid;
       while (iz < 0) iz += nzgrid;
-
-      if (update->ntimestep > 1200)
-        fprintf(screen,"update->ntimestep=%d\n",update->ntimestep);
 
       if (T_electron[ix][iy][iz] < 0)
         error->all(FLERR,"Electronic temperature dropped below zero");
@@ -1108,12 +1108,14 @@ void FixTTMMod::end_of_step()
         if (stability_criterion < 0.0) {
           inner_dt = (1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
-          fprintf(screen,"stability_criterion < 0.0");
+          fprintf(screen,"stability_criterion < 0.0\n");
         }
         num_inner_timesteps = static_cast<unsigned int>(update->dt/inner_dt) + 1;
         inner_dt = update->dt/double(num_inner_timesteps);
         if (num_inner_timesteps > 1000000)
           error->warning(FLERR,"Too many inner timesteps in fix ttm/mod");
+        if (update->ntimestep == 1272)
+          fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
         for (int ith_inner_timestep = 0; ith_inner_timestep < num_inner_timesteps;
              ith_inner_timestep++) {
           for (int ix = 0; ix < nxgrid; ix++)
@@ -1204,10 +1206,11 @@ void FixTTMMod::end_of_step()
                   }
 
                 if (switched_on[ix][iy][iz] != 0)
-                  fprintf(screen,"New electronic cell switched on, ix=%d, iy=%d, iz=%d, ts=%d\n",ix,iy,iz,update->ntimestep);
                   if (T_electron[ix][iy][iz] < T_electron[ix+switched_on[ix][iy][iz]][iy][iz])
                     T_electron[ix][iy][iz] = T_electron[ix][iy][iz] + 0.5*(T_electron[ix+switched_on[ix][iy][iz]][iy][iz] - T_electron[ix][iy][iz]);
 
+                if (update->ntimestep == 1272)
+                  fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
                 if (rho_e[ix][iy][iz] != 0.0) {
                   if (el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity > el_thermal_conductivity)
                     el_thermal_conductivity = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity;
@@ -1223,6 +1226,9 @@ void FixTTMMod::end_of_step()
   // output of grid electron temperatures to file
 
   if (outfile && (update->ntimestep % outevery == 0))
+    write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
+
+  if (outfile && (update->ntimestep == 1272))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
 
   // calculate T_e_avg here so that it is calculated at the end of every step
