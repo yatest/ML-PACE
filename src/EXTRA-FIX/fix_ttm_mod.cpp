@@ -980,9 +980,12 @@ void FixTTMMod::end_of_step()
                             * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
       }
 
+  if (rho_e[37,0,0] == 0.0)
+    fprintf(screen,"rho_e[37,0,0] = 0.0 at timestep %d",update->ntimestep);
+
   if (update->ntimestep >= 1270) {
-          fprintf(screen,"rho_e[36,0,0] = %20.16f\n",rho_e[36,0,0]);
-          fprintf(screen,"rho_e[37,0,0] = %20.16f\n",rho_e[37,0,0]);
+    fprintf(screen,"rho_e[36,0,0] = %20.16f\n",rho_e[36,0,0]);
+    fprintf(screen,"rho_e[37,0,0] = %20.16f\n",rho_e[37,0,0]);
   }
 
   double dx = domain->xprd/nxgrid;
@@ -1028,6 +1031,11 @@ void FixTTMMod::end_of_step()
 
   inner_dt = 0.8*(1.0/6.0)/(el_th_diff*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
   num_inner_timesteps = static_cast<int>(update->dt/inner_dt) + 1;
+  
+  if (update->ntimestep == 1270) {
+    fprintf(screen,"inner_dt = %20.16f\n",inner_dt);
+    fprintf(screen,"update->dt = %20.16f\n",update->dt);
+  }
 
   if (surf_flag == 0) {
     // el heat capacity already includes the factor of rho_e
