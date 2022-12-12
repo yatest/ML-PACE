@@ -1011,8 +1011,8 @@ void FixTTMMod::end_of_step()
   // num_inner_timesteps = # of inner steps (thermal solves)
   // required this MD step to maintain a stable explicit solve
 
-  // since the stability criterion should be constant for the reasons states above, we can calculate it
-  // once here and set inner_dt and num_inner_timesteps to give allow it to work first time.
+  // since the stability criterion should be constant for the reasons stated above, we can calculate it
+  // once here and set inner_dt and num_inner_timesteps to allow it to work first time.
   // set inner_dt to 0.8 * max_inner_dt to ensure stability of the algorithm.
   double inner_dt = update->dt;
   int num_inner_timesteps = 1;
@@ -1119,6 +1119,8 @@ void FixTTMMod::end_of_step()
                 T_electron_old[ix][iy][iz] =
                   T_electron[ix][iy][iz];
           // compute new electron T profile
+          // is duration being added to too much here?
+          // since do loop is resetting T_electron each time
           duration = duration + inner_dt;
           for (int ix = 0; ix < nxgrid; ix++)
             for (int iy = 0; iy < nygrid; iy++)
@@ -1199,6 +1201,7 @@ void FixTTMMod::end_of_step()
                   }
 
                 if (switched_on[ix][iy][iz] != 0)
+                  fprintf(screen,"New electronic cell switched on\n")
                   if (T_electron[ix][iy][iz] < T_electron[ix+switched_on[ix][iy][iz]][iy][iz])
                     T_electron[ix][iy][iz] = T_electron[ix][iy][iz] + 0.5*(T_electron[ix+switched_on[ix][iy][iz]][iy][iz] - T_electron[ix][iy][iz]);
 
@@ -1228,11 +1231,12 @@ void FixTTMMod::end_of_step()
     numocccell = 0;
     for (int ix = 0; ix < nxgrid; ix++)
       for (int iy = 0; iy < nygrid; iy++)
-        for (int iz = 0; iz < nzgrid; iz++) { 
+        for (int iz = 0; iz < nzgrid; iz++) {
           rho_e[ix][iy][iz] = 0.0;
           if (T_electron[ix][iy][iz] != 0.0) {
             numocccell++;
             // should T_e_avg depend on rho_e of each cell?
+            // probably not as it is an intensive variable
             atom->T_e_avg += T_electron[ix][iy][iz];
             // recalculate rho_e
             rho_e[ix][iy][iz] = N_ion_all[ix][iy][iz] * N_val / ((domain->xprd/nxgrid) 
