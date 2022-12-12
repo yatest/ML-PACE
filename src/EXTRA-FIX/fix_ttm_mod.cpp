@@ -1231,9 +1231,10 @@ void FixTTMMod::end_of_step()
             fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
             fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37,0,0]);
           }
-          if (update->ntimestep == 1272)
+          if (update->ntimestep == 1272) {
             fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36,0,0]);
             fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37,0,0]);
+          }
         }
       } while (stability_criterion < 0.0);
     }
