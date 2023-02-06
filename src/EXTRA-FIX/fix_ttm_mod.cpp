@@ -1025,11 +1025,11 @@ void FixTTMMod::end_of_step()
 
   // since the stability criterion should be constant for the reasons stated above, we can calculate it
   // once here and set inner_dt and num_inner_timesteps to allow it to work first time.
-  // set inner_dt to 0.8 * max_inner_dt to ensure stability of the algorithm.
+  // set inner_dt to 0.2 * max_inner_dt to ensure stability of the algorithm.
   double inner_dt = update->dt;
   int num_inner_timesteps = 1;
 
-  inner_dt = 0.8*(1.0/6.0)/(el_th_diff*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
+  inner_dt = 0.2*(1.0/6.0)/(el_th_diff*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
   num_inner_timesteps = static_cast<int>(update->dt/inner_dt) + 1;
   
   if (update->ntimestep == 1270) {
@@ -1120,9 +1120,12 @@ void FixTTMMod::end_of_step()
         // if C_e == 0, we will be dividing by 0 and calculation will break
         // therefore only works whilst active electron cells contain at least
         // one atom
+        // the next few lines are not currently needed as inner_dt is preset
+        // only used atm to run the 'do' loop for one iteration
         stability_criterion = 1.0 -
-          6.0*inner_dt *
+          6.0*(inner_dt/0.2) *
           (el_th_diff*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
+        // if statement should never trigger
         if (stability_criterion < 0.0) {
           inner_dt = (1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
@@ -1197,24 +1200,47 @@ void FixTTMMod::end_of_step()
                   // could fix by setting cr_vac = 0 or T_electron = 0 when no atoms in cell.
                   // if there is only one atom in a cell, rho_e << 1, el_specific_heat << 1,
                   // and inner_dt << 1, leading to a massive number of iterations.
+
+                  // changed average of conductivities to average of inverse of conductivities
+                  // due to similar argument as in electrical circuits.
+                  // K = 2 * K_1 * K_2 / (K_1 + K_2)
+                  // if K_1 << K_2, K ~ 2K_1, therefore alpha_max = 2*el_th_diff
+                  // inner_dt therefore requires factor of 0.5 in worst case scenario to remain
+                  // stable.
+                  // we use 0.2 throughout for safety
                   if (rho_e[ix][iy][iz] != 0.0) {
-                    T_electron[ix][iy][iz] =
-                      T_electron_old[ix][iy][iz] +
-                      inner_dt/el_properties(T_electron_old[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity *
-                      ((cr_v_r_x*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[right_x][iy][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[right_x][iy][iz]/2.0).el_thermal_conductivity*
+                    T_electron[ix][iy][iz] = 0.0;
+
+                    K_1 = el_properties(T_electron_old[ix][iy][iz],rho_e[ix][iy][iz]).el_thermal_conductivity;
+                    K_2 = el_properties(T_electron_old[right_x][iy][iz],rho_e[right_x][iy][iz]).el_thermal_conductivity;
+                    K_3 = el_properties(T_electron_old[left_x][iy][iz],rho_e[left_x][iy][iz]).el_thermal_conductivity;
+                    T_electron[ix][iy][iz] += 
+                        (cr_v_r_x*(2.0*K_1*K_2/(K_1+K_2))*
                         (T_electron_old[right_x][iy][iz]-T_electron_old[ix][iy][iz])/dx -
-                        cr_v_l_x*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[left_x][iy][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[left_x][iy][iz]/2.0).el_thermal_conductivity*
-                        (T_electron_old[ix][iy][iz]-T_electron_old[left_x][iy][iz])/dx)/dx +
-                      (cr_v_r_y*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][right_y][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][right_y][iz]/2.0).el_thermal_conductivity*
+                        cr_v_l_x*(2.0*K_1*K_3/(K_1+K_3))*
+                        (T_electron_old[ix][iy][iz]-T_electron_old[left_x][iy][iz])/dx)/dx;
+
+                    K_2 = el_properties(T_electron_old[ix][right_y][iz],rho_e[ix][right_y][iz]).el_thermal_conductivity;
+                    K_3 = el_properties(T_electron_old[ix][left_y][iz],rho_e[ix][left_y][iz]).el_thermal_conductivity;
+                    T_electron[ix][iy][iz] += 
+                        (cr_v_r_y*(2.0*K_1*K_2/(K_1+K_2))*
                         (T_electron_old[ix][right_y][iz]-T_electron_old[ix][iy][iz])/dy -
-                        cr_v_l_y*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][left_y][iz]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][left_y][iz]/2.0).el_thermal_conductivity*
-                        (T_electron_old[ix][iy][iz]-T_electron_old[ix][left_y][iz])/dy)/dy +
-                      (cr_v_r_z*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][iy][right_z]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][iy][right_z]/2.0).el_thermal_conductivity*
+                        cr_v_l_y*(2.0*K_1*K_3/(K_1+K_3))*
+                        (T_electron_old[ix][iy][iz]-T_electron_old[ix][left_y][iz])/dy)/dy;
+
+                    K_2 = el_properties(T_electron_old[ix][iy][right_z],rho_e[ix][iy][right_z]).el_thermal_conductivity;
+                    K_3 = el_properties(T_electron_old[ix][iy][left_z],rho_e[ix][iy][left_z]).el_thermal_conductivity;
+                    T_electron[ix][iy][iz] += 
+                        (cr_v_r_z*(2.0*K_1*K_2/(K_1+K_2))*
                         (T_electron_old[ix][iy][right_z]-T_electron_old[ix][iy][iz])/dz -
-                        cr_v_l_z*el_properties(T_electron_old[ix][iy][iz]/2.0+T_electron_old[ix][iy][left_z]/2.0,rho_e[ix][iy][iz]/2.0+rho_e[ix][iy][left_z]/2.0).el_thermal_conductivity*
-                        (T_electron_old[ix][iy][iz]-T_electron_old[ix][iy][left_z])/dz)/dz);
-                        // should maybe be T_electron_old fed into el_properties
-                    T_electron[ix][iy][iz]+=inner_dt/el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity*
+                        cr_v_l_z*(2.0*K_1*K_3/(K_1+K_3))*
+                        (T_electron_old[ix][iy][iz]-T_electron_old[ix][iy][left_z])/dz)/dz;
+
+                    T_electron[ix][iy][iz] *= inner_dt/el_properties(T_electron_old[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
+                    T_electron[ix][iy][iz] += T_electron_old[ix][iy][iz]
+
+                    // should maybe be T_electron_old fed into el_properties
+                    T_electron[ix][iy][iz] += inner_dt/el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity*
                       (mult_factor -
                       net_energy_transfer_all[ix][iy][iz]/del_vol);
                   } else T_electron[ix][iy][iz] =

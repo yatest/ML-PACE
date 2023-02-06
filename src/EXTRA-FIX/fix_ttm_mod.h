@@ -78,6 +78,7 @@ class FixTTMMod : public Fix {
   int ***N_ion, ***N_ion_all, ***switched_on;
 
   double gamma_p, gamma_s, v_0, v_0_sq;
+  double K_1, K_2, K_3;
   double N_ele, N_val;
   int skin_layer, surface_l, surface_r, t_surface_l, t_surface_r;
   int movsur, surf_flag;
