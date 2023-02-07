@@ -386,8 +386,8 @@ void FixTTMMod::post_force(int /*vflag*/)
 
   // apply damping and thermostat to all atoms in fix group
 
-  if (update->ntimestep > 1270)
-        fprintf(screen,"post_force update->ntimestep=%d\n",update->ntimestep);
+  // if (update->ntimestep > 1270)
+  //       fprintf(screen,"post_force update->ntimestep=%d\n",update->ntimestep);
 
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
@@ -980,13 +980,13 @@ void FixTTMMod::end_of_step()
                             * (domain->yprd/nygrid) * (domain->zprd/nzgrid));
       }
 
-  if (rho_e[37][0][0] == 0.0)
-    fprintf(screen,"rho_e[37,0,0] = 0.0 at timestep %d",update->ntimestep);
+  // if (rho_e[37][0][0] == 0.0)
+  //   fprintf(screen,"rho_e[37,0,0] = 0.0 at timestep %d",update->ntimestep);
 
-  if (update->ntimestep >= 1270) {
-    fprintf(screen,"rho_e[36,0,0] = %20.16f\n",rho_e[36][0][0]);
-    fprintf(screen,"rho_e[37,0,0] = %20.16f\n",rho_e[37][0][0]);
-  }
+  // if (update->ntimestep >= 1270) {
+  //   fprintf(screen,"rho_e[36,0,0] = %20.16f\n",rho_e[36][0][0]);
+  //   fprintf(screen,"rho_e[37,0,0] = %20.16f\n",rho_e[37][0][0]);
+  // }
 
   double dx = domain->xprd/nxgrid;
   double dy = domain->yprd/nygrid;
@@ -1032,14 +1032,14 @@ void FixTTMMod::end_of_step()
   inner_dt = 0.2*(1.0/6.0)/(el_th_diff*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
   num_inner_timesteps = static_cast<int>(update->dt/inner_dt) + 1;
   
-  if (update->ntimestep == 1270) {
-    fprintf(screen,"dx = %20.16f\n",dx);
-    fprintf(screen,"dy = %20.16f\n",dy);
-    fprintf(screen,"dz = %20.16f\n",dz);
-    fprintf(screen,"el_th_diff = %20.16f\n",el_th_diff);
-    fprintf(screen,"inner_dt = %20.16f\n",inner_dt);
-    fprintf(screen,"update->dt = %20.16f\n",update->dt);
-  }
+  // if (update->ntimestep == 1270) {
+  //   fprintf(screen,"dx = %20.16f\n",dx);
+  //   fprintf(screen,"dy = %20.16f\n",dy);
+  //   fprintf(screen,"dz = %20.16f\n",dz);
+  //   fprintf(screen,"el_th_diff = %20.16f\n",el_th_diff);
+  //   fprintf(screen,"inner_dt = %20.16f\n",inner_dt);
+  //   fprintf(screen,"update->dt = %20.16f\n",update->dt);
+  // }
 
   if (surf_flag == 0) {
     // el heat capacity already includes the factor of rho_e
@@ -1135,16 +1135,16 @@ void FixTTMMod::end_of_step()
         inner_dt = update->dt/double(num_inner_timesteps);
         if (num_inner_timesteps > 1000000)
           error->warning(FLERR,"Too many inner timesteps in fix ttm/mod");
-        if (update->ntimestep == 1271) {
-          fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
-          fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
-          fprintf(screen,"num_inner_timesteps = %d",num_inner_timesteps);
-        }
-        if (update->ntimestep == 1272) {
-          fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
-          fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
-          fprintf(screen,"num_inner_timesteps = %d",num_inner_timesteps);
-        }
+        // if (update->ntimestep == 1271) {
+        //   fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
+        //   fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
+        //   fprintf(screen,"num_inner_timesteps = %d",num_inner_timesteps);
+        // }
+        // if (update->ntimestep == 1272) {
+        //   fprintf(screen,"pre heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
+        //   fprintf(screen,"pre heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
+        //   fprintf(screen,"num_inner_timesteps = %d",num_inner_timesteps);
+        // }
         for (int ith_inner_timestep = 0; ith_inner_timestep < num_inner_timesteps;
              ith_inner_timestep++) {
           for (int ix = 0; ix < nxgrid; ix++)
@@ -1237,7 +1237,7 @@ void FixTTMMod::end_of_step()
                         (T_electron_old[ix][iy][iz]-T_electron_old[ix][iy][left_z])/dz)/dz;
 
                     T_electron[ix][iy][iz] *= inner_dt/el_properties(T_electron_old[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
-                    T_electron[ix][iy][iz] += T_electron_old[ix][iy][iz]
+                    T_electron[ix][iy][iz] += T_electron_old[ix][iy][iz];
 
                     // should maybe be T_electron_old fed into el_properties
                     T_electron[ix][iy][iz] += inner_dt/el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity*
@@ -1268,14 +1268,14 @@ void FixTTMMod::end_of_step()
                     el_specific_heat = el_properties(T_electron[ix][iy][iz],rho_e[ix][iy][iz]).el_heat_capacity;
                 }
               }
-          if (update->ntimestep == 1271) {
-            fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
-            fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
-          }
-          if (update->ntimestep == 1272) {
-            fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
-            fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
-          }
+          // if (update->ntimestep == 1271) {
+          //   fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
+          //   fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
+          // }
+          // if (update->ntimestep == 1272) {
+          //   fprintf(screen,"after heat diffusion: T_electron[36,0,0] = %20.16f\n",T_electron[36][0][0]);
+          //   fprintf(screen,"after heat diffusion: T_electron[37,0,0] = %20.16f\n",T_electron[37][0][0]);
+          // }
         }
       } while (stability_criterion < 0.0);
     }
@@ -1286,8 +1286,8 @@ void FixTTMMod::end_of_step()
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
 
-  if (outfile && (update->ntimestep >= 1270))
-    write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
+  // if (outfile && (update->ntimestep >= 1270))
+  //   write_electron_temperatures(fmt::format("{}.{}", outfile, update->ntimestep));
 
   // calculate T_e_avg here so that it is calculated at the end of every step
   // and can then be read by PACE when calculating the forces on the next step.
