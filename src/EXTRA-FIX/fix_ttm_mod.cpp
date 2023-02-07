@@ -1123,11 +1123,11 @@ void FixTTMMod::end_of_step()
         // the next few lines are not currently needed as inner_dt is preset
         // only used atm to run the 'do' loop for one iteration
         stability_criterion = 1.0 -
-          6.0*(inner_dt/0.2) *
+          6.0*inner_dt *
           (el_th_diff*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
         // if statement should never trigger
         if (stability_criterion < 0.0) {
-          inner_dt = (1.0/6.0)*el_specific_heat /
+          inner_dt = 0.2*(1.0/6.0)*el_specific_heat /
             (el_thermal_conductivity*(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz));
           fprintf(screen,"stability_criterion < 0.0\n");
         }
