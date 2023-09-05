@@ -220,6 +220,7 @@ void PairPACE::compute(int eflag, int vflag) {
                 error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "myTemp");
             if (comm->me == 0)
                 fprintf(screen, "atom->v[0][0] = %f\n", atom->v[0][0]);
+            temperature->dof_compute();
             atom->T_e_avg = temperature->compute_scalar();
             if (comm->me == 0)
                 fprintf(screen, "Temperature = %f\n", atom->T_e_avg);
