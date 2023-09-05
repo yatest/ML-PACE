@@ -224,6 +224,7 @@ void PairPACE::compute(int eflag, int vflag) {
             if (comm->me == 0)
                 fprintf(screen, "Temperature = %f\n", atom->T_e_avg);
             // atom->T_e_avg = temperature->scalar;
+            // tfactor is zero which is causing T=0
         }
 
         // if not using T_e_avg then use T_e input to pace command
