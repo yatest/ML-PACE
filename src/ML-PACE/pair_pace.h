@@ -102,6 +102,8 @@ namespace LAMMPS_NS {
 
         bool recursive = false;       // "recursive" option for ACERecursiveEvaluator
         bool interpolate = false;     // "interpolate" option for temperature
+
+        class Compute *temperature;
     };
 
 }

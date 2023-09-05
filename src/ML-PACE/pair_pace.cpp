@@ -44,6 +44,8 @@ Copyright 2021 Yury Lysogorskiy^1, Cas van der Oord^2, Anton Bochkarev^1,
 #include "comm.h"
 #include "memory.h"
 #include "error.h"
+#include "compute.h"
+#include "modify.h"
 
 
 #include "math_const.h"
@@ -201,8 +203,19 @@ void PairPACE::compute(int eflag, int vflag) {
     } else {
         for (k = 0; k < nbasis; k++){
             // if T_e_avg is homogeneous, can calculate T_u, T_l, and a here
-            ace_list[k]->resize_neighbours_cache(max_jnum);   
+            ace_list[k]->resize_neighbours_cache(max_jnum); 
+
+            // if not using TTM use temperature of ions
+            auto ttm_fixes = modify->get_fix_by_style("ttm/mod");
+            if (ttm_fixes.size() < 1) {
+                temperature = modify->get_compute_by_id("thermo_temp");
+                if (!temperature)
+                    error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", id_temp);
+                temperature->compute_scalar();
+                atom->T_e_avg = temperature->scalar;
+            }
         }
+        
         // if not using T_e_avg then use T_e input to pace command
         if (!atom->Te_flag) atom->T_e_avg = T_e_in;
     }
