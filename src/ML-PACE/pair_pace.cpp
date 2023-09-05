@@ -218,6 +218,8 @@ void PairPACE::compute(int eflag, int vflag) {
             temperature = modify->get_compute_by_id("myTemp");
             if (!temperature)
                 error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "myTemp");
+            if (comm->me == 0)
+                fprintf(screen, "atom->v[0][0] = %f\n", atom->v[0][0]);
             temperature->compute_scalar();
             if (comm->me == 0)
                 fprintf(screen, "Temperature = %f\n", temperature->scalar);
