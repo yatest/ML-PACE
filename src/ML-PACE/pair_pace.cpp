@@ -206,8 +206,8 @@ void PairPACE::compute(int eflag, int vflag) {
             ace_list[k]->resize_neighbours_cache(max_jnum); 
 
             // if not using TTM use temperature of ions
-            auto ttm_fixes = modify->get_fix_by_style("ttm/mod");
-            if (ttm_fixes.size() < 1) {
+            int ttm_fixes = modify->find_fix_by_style("ttm/mod");
+            if (ttm_fixes.size() != -1) {
                 temperature = modify->get_compute_by_id("thermo_temp");
                 if (!temperature)
                     error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", id_temp);
@@ -215,7 +215,7 @@ void PairPACE::compute(int eflag, int vflag) {
                 atom->T_e_avg = temperature->scalar;
             }
         }
-        
+
         // if not using T_e_avg then use T_e input to pace command
         if (!atom->Te_flag) atom->T_e_avg = T_e_in;
     }

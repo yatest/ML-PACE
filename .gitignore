@@ -18,3 +18,5 @@
 !*/src/thermo.cpp
 !*/src/verlet.cpp
 !*/src/domain.cpp
+!*/src/modify.cpp
+!*/src/modify.h

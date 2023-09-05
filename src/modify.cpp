@@ -1347,6 +1347,20 @@ int Modify::find_compute(const std::string &id)
   return -1;
 }
 
+// COPIED FROM LATER VERSION BY TWY FOR CONVENIENCE 
+/* ----------------------------------------------------------------------
+   look up pointer to Compute class by compute-ID
+   return null pointer if ID not found
+------------------------------------------------------------------------- */
+
+Compute *Modify::get_compute_by_id(const std::string &id) const
+{
+  if (id.empty()) return nullptr;
+  for (int icompute = 0; icompute < ncompute; icompute++)
+    if (compute[icompute] && (id == compute[icompute]->id)) return compute[icompute];
+  return nullptr;
+}
+
 /* ----------------------------------------------------------------------
    find a compute by style
    return index of compute or -1 if not found

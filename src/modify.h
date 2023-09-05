@@ -112,6 +112,8 @@ class Modify : protected Pointers {
 
   Compute *add_compute(int, char **, int trysuffix = 1);
   Compute *add_compute(const std::string &, int trysuffix = 1);
+  // COPIED FROM LATER VERSION BY TWY FOR CONVENIENCE
+  Compute *get_compute_by_id(const std::string &);
   void modify_compute(int, char **);
   void delete_compute(const std::string &);
   void delete_compute(int);
