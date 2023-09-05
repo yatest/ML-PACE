@@ -212,12 +212,12 @@ void PairPACE::compute(int eflag, int vflag) {
         int ttm_fixes = modify->find_fix_by_style("ttm/mod");
         if (comm->me == 0)
             fprintf(screen, "ttm_fixes = %d\n", ttm_fixes);
-        if (ttm_fixes != -1) {
+        if (ttm_fixes == -1) {
             if (comm->me == 0)
                 fprintf(screen, "Get temperature compute\n");
-            temperature = modify->get_compute_by_id("thermo_temp");
+            temperature = modify->get_compute_by_id("myTemp");
             if (!temperature)
-                error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "thermo_temp");
+                error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "myTemp");
             temperature->compute_scalar();
             if (comm->me == 0)
                 fprintf(screen, "Temperature = %f\n", temperature->scalar);
