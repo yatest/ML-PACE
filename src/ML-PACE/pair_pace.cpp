@@ -204,16 +204,24 @@ void PairPACE::compute(int eflag, int vflag) {
         for (k = 0; k < nbasis; k++){
             // if T_e_avg is homogeneous, can calculate T_u, T_l, and a here
             ace_list[k]->resize_neighbours_cache(max_jnum); 
+        }
 
-            // if not using TTM use temperature of ions
-            int ttm_fixes = modify->find_fix_by_style("ttm/mod");
-            if (ttm_fixes != -1) {
-                temperature = modify->get_compute_by_id("thermo_temp");
-                if (!temperature)
-                    error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "thermo_temp");
-                temperature->compute_scalar();
-                atom->T_e_avg = temperature->scalar;
-            }
+        // if not using TTM use temperature of ions
+        if (comm->me == 0)
+            fprintf(screen, "Calculating T\n");
+        int ttm_fixes = modify->find_fix_by_style("ttm/mod");
+        if (comm->me == 0)
+            fprintf(screen, "ttm_fixes = %d\n", ttm_fixes);
+        if (ttm_fixes != -1) {
+            if (comm->me == 0)
+                fprintf(screen, "Get temperature compute\n");
+            temperature = modify->get_compute_by_id("thermo_temp");
+            if (!temperature)
+                error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "thermo_temp");
+            temperature->compute_scalar();
+            if (comm->me == 0)
+                fprintf(screen, "Temperature = %f\n", temperature->scalar);
+            atom->T_e_avg = temperature->scalar;
         }
 
         // if not using T_e_avg then use T_e input to pace command
