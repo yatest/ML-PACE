@@ -209,19 +209,19 @@ void PairPACE::compute(int eflag, int vflag) {
         }
 
         // if not using TTM use temperature of ions
-        if (comm->me == 0)
-            fprintf(screen, "Calculating T\n");
+        // if (comm->me == 0)
+        //     fprintf(screen, "Calculating T\n");
         int ttm_fixes = modify->find_fix_by_style("ttm/mod");
-        if (comm->me == 0)
-            fprintf(screen, "ttm_fixes = %d\n", ttm_fixes);
+        // if (comm->me == 0)
+        //     fprintf(screen, "ttm_fixes = %d\n", ttm_fixes);
         if (ttm_fixes == -1) {
-            if (comm->me == 0)
-                fprintf(screen, "Get temperature compute\n");
+            // if (comm->me == 0)
+            //     fprintf(screen, "Get temperature compute\n");
             temperature = modify->get_compute_by_id("thermo_temp");
             if (!temperature)
                 error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "thermo_temp");
-            if (comm->me == 0)
-                fprintf(screen, "atom->v[0][0] = %f\n", atom->v[0][0]);
+            // if (comm->me == 0)
+            //     fprintf(screen, "atom->v[0][0] = %f\n", atom->v[0][0]);
 
             // // move into function called dof_compute()
             // int fix_dof = 0;
@@ -241,16 +241,16 @@ void PairPACE::compute(int eflag, int vflag) {
             atom->T_e_avg = temperature->compute_scalar();
 
             if (atom->T_e_avg == 0.0) {
-                if (comm->me == 0)
-                    fprintf(screen, "v_T = %s\n", input->variable->retrieve("T"));
+                // if (comm->me == 0)
+                //     fprintf(screen, "v_T = %s\n", input->variable->retrieve("T"));
                 atom->T_e_avg = utils::numeric(FLERR, 
                                               input->variable->retrieve("T"),
                                               false,
                                               lmp);
             }
 
-            if (comm->me == 0)
-                fprintf(screen, "Temperature = %f\n", atom->T_e_avg);
+            // if (comm->me == 0)
+            //     fprintf(screen, "Temperature = %f\n", atom->T_e_avg);
             // atom->T_e_avg = temperature->scalar;
             // tfactor is zero which is causing T=0
         }
