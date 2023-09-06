@@ -236,15 +236,19 @@ void PairPACE::compute(int eflag, int vflag) {
             // if (dof > 0.0) tfactor = force->mvv2e / (dof * force->boltz);
             // else tfactor = 0.0;
 
+            // can we use run 0 with an arbitrary potential to calculate DOFs?
+
             atom->T_e_avg = temperature->compute_scalar();
 
-            if (atom->T_e_avg == 0.0)
+            if (atom->T_e_avg == 0.0) {
                 if (comm->me == 0)
                     fprintf(screen, "v_T = %s\n", input->variable->retrieve("T"));
                 atom->T_e_avg = utils::numeric(FLERR, 
                                               input->variable->retrieve("T"),
                                               false,
                                               lmp);
+            }
+
             if (comm->me == 0)
                 fprintf(screen, "Temperature = %f\n", atom->T_e_avg);
             // atom->T_e_avg = temperature->scalar;
