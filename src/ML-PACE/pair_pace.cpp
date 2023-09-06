@@ -46,6 +46,7 @@ Copyright 2021 Yury Lysogorskiy^1, Cas van der Oord^2, Anton Bochkarev^1,
 #include "error.h"
 #include "compute.h"
 #include "modify.h"
+#include "variable.h"
 
 
 #include "math_const.h"
@@ -220,8 +221,29 @@ void PairPACE::compute(int eflag, int vflag) {
                 error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "myTemp");
             if (comm->me == 0)
                 fprintf(screen, "atom->v[0][0] = %f\n", atom->v[0][0]);
-            temperature->dof_compute();
+
+            // // move into function called dof_compute()
+            // int fix_dof = 0;
+            // for (auto &ifix : modify->get_fix_list())
+            //     if (ifix->dof_flag)
+            //         fix_dof += ifix->dof(igroup);
+            // // adjust_dof_fix();
+            // natoms_temp = group->count(igroup);
+            // fprintf(screen, "natoms_temp = %d\n", natoms_temp);
+            // dof = domain->dimension * natoms_temp;
+            // dof -= extra_dof + fix_dof;
+            // if (dof > 0.0) tfactor = force->mvv2e / (dof * force->boltz);
+            // else tfactor = 0.0;
+
             atom->T_e_avg = temperature->compute_scalar();
+
+            if (atom->T_e_avg == 0.0)
+                if (comm->me == 0)
+                    fprintf(screen, "v_T = %s\n", variable->retrieve("T"));
+                atom->T_e_avg = utils::numeric('pair_pace.cpp', 
+                                              241,
+                                              variable->retrieve("T"),
+                                              0);
             if (comm->me == 0)
                 fprintf(screen, "Temperature = %f\n", atom->T_e_avg);
             // atom->T_e_avg = temperature->scalar;
