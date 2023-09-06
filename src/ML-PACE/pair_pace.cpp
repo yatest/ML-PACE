@@ -239,13 +239,12 @@ void PairPACE::compute(int eflag, int vflag) {
             atom->T_e_avg = temperature->compute_scalar();
 
             if (atom->T_e_avg == 0.0)
-                const char this_file = "pair_pace.cpp";
                 if (comm->me == 0)
                     fprintf(screen, "v_T = %s\n", input->variable->retrieve("T"));
-                atom->T_e_avg = utils::numeric(*this_file, 
-                                              245,
+                atom->T_e_avg = utils::numeric(FLERR, 
                                               input->variable->retrieve("T"),
-                                              0);
+                                              false,
+                                              lmp);
             if (comm->me == 0)
                 fprintf(screen, "Temperature = %f\n", atom->T_e_avg);
             // atom->T_e_avg = temperature->scalar;
