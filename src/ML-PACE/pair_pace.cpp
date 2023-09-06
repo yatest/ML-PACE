@@ -217,9 +217,9 @@ void PairPACE::compute(int eflag, int vflag) {
         if (ttm_fixes == -1) {
             if (comm->me == 0)
                 fprintf(screen, "Get temperature compute\n");
-            temperature = modify->get_compute_by_id("myTemp");
+            temperature = modify->get_compute_by_id("thermo_temp");
             if (!temperature)
-                error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "myTemp");
+                error->all(FLERR, "Temperature compute ID {} for pair_pace does not exist", "thermo_temp");
             if (comm->me == 0)
                 fprintf(screen, "atom->v[0][0] = %f\n", atom->v[0][0]);
 
