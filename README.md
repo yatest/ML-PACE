@@ -1,4 +1,4 @@
-##Temperature-dependent atomic cluster expansion interatomic potentials in LAMMPS
+## Temperature-dependent atomic cluster expansion interatomic potentials in LAMMPS
 Modification to the performant atomic cluster expansion implementation in LAMMPS (https://github.com/ICAMS/lammps-user-pace) to allow for linear interpolation between ACE potentials fit at different temperatures. The code is messy as it was never fully tested after finishing my PhD; however, I hope that it may be of use to someone.
 
 The below is the original README for the ML-PACE package:
